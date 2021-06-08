@@ -1,0 +1,51 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [      
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch API Server",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "cwd": "${workspaceFolder}/server-side",
+            "program": "${workspaceFolder}/server-side/app.local.ts",
+            "outFiles": [
+                "${workspaceFolder}/server-side/build/*/*.js"
+            ],
+            "preLaunchTask": {
+                "label": "Build API",
+                "type": "typescript",
+                "tsconfig": "server-side/tsconfig.json",
+                "option": "watch",
+                "problemMatcher": [
+                    "$tsc-watch"
+                ],
+                "group": "build"
+            },
+            "runtimeExecutable": "${workspaceFolder}/server-side/node_modules/.bin/nodemon",
+            "restart": true,
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Launch Program",
+            "skipFiles": [
+                "<node_internals>/**"
+            ],
+            "program": "${workspaceFolder}/server-side/app.local.js"
+        },
+        {
+            "type": "node",
+            "request": "attach",
+            "protocol": "inspector",
+            "port": 9222,
+            "address": "localhost",
+            // "websocketAddress": "ws://0.0.0.0:9222/f56157ef-6f9b-49d8-ae3a-db4ccd53ffff",
+            "name": "Launch CPINode debugger Server",
+        }
+    ]
+}
