@@ -10,18 +10,28 @@ The error Message is importent! it will be written in the audit log and help the
 
 import { PapiClient, CodeJob, AddonDataScheme } from "@pepperi-addons/papi-sdk";
 import { Client, Request } from '@pepperi-addons/debug-server'
+import MyService from './my.service';
 
 export async function install(client: Client, request: Request): Promise<any> {
     try {
-/*         // install PepperiUsageMonitor code job
+        let successUsageMonitor = true;
+        let errorMessage = '';
+        let resultObject = {};
+        client.AddonUUID = "00000000-0000-0000-0000-000000005a9e";
+        const service = new MyService(client);
+
+        // install PepperiUsageMonitor code job
         let retValUsageMonitor = await InstallUsageMonitor(service);
         successUsageMonitor = retValUsageMonitor.success;
-        errorMessage = "UsageMonitor installation failed on: " + retValUsageMonitor.errorMessage;
+        errorMessage = "pepperi-usage installation failed on: " + retValUsageMonitor.errorMessage;
         if (!successUsageMonitor){
             console.error(errorMessage);
             return retValUsageMonitor;
         }
-        console.log('UsageMonitor codejob installed succeeded.'); */
+        console.log('pepperi-usage installation succeeded.');
+
+        const data = {};
+        const distributor = await GetDistributor(service.papiClient);
 
     }
     catch (err) {
@@ -73,47 +83,58 @@ async function InstallUsageMonitor(service){
         // Install scheme for Pepperi Usage Monitor
         try {
             await service.papiClient.addons.data.schemes.post(PepperiUsageMonitorTable);
-            console.log('PepperiUsageMonitor Table installed successfully.');
+            console.log('pepperi-usage table installed successfully.');
         }
         catch (err) {
             retVal = {
                 success: false,
-                errorMessage: ('message' in err) ? err.message : 'Could not install HealthMonitorAddon. Create PepperiUsageMonitor table failed.',
+                errorMessage: ('message' in err) ? err.message : 'Could not install pepperi-usage. Table creation failed.',
             }
         }
 
         // Install code job for Pepperi Usage Monitor
         try {
             const codeJob = await service.papiClient.codeJobs.upsert({
-                CodeJobName: "Pepperi Usage Monitor Addon Code Job",
+                CodeJobName: "Pepperi Usage Monitor",
                 Description: "Pepperi Usage Monitor",
                 Type: "AddonJob",
                 IsScheduled: true,
                 CronExpression: getCronExpression(),
-                AddonPath: "api-success-monitor",
+                AddonPath: "api",
                 FunctionName: "run_collect_data",
                 AddonUUID: service.client.AddonUUID,
                 NumberOfTries: 30,
             });
             retVal["codeJobName"] = 'UsageMonitorCodeJobUUID';
             retVal["codeJobUUID"] = codeJob.UUID;
-            console.log('PepperiUsageMonitor code job installed successfully.');
+            console.log('pepperi-usage code job installed successfully.');
         }
         catch (err)
         {
             retVal = {
                 success: false,
-                errorMessage: ('message' in err) ? err.message : 'Could not install HealthMonitorAddon. Create PepperiUsageMonitor code job failed.',
+                errorMessage: ('message' in err) ? err.message : 'Could not install pepperi-usage. Code job creation failed.',
             }
         }
     }
     catch (err) {
         retVal = {
             success: false,
-            errorMessage: ('message' in err) ? err.message : 'Cannot install HealthMonitorAddon (PepperiUsageMonitor). Unknown Error Occured',
+            errorMessage: ('message' in err) ? err.message : 'Cannot install pepperi-usage. Unknown error occured',
         };
     }
     return retVal;
+}
+
+async function GetDistributor(papiClient){
+    let distributorData = await papiClient.get('/distributor');
+    const machineData = await papiClient.get('/distributor/machine');
+    const distributor ={
+        InternalID: distributorData.InternalID,
+        Name: distributorData.Name,
+        MachineAndPort: machineData.Machine + ":" + machineData.Port
+    };
+    return distributor;
 }
 
 function getCronExpression() {
