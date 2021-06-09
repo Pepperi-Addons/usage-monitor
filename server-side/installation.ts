@@ -19,7 +19,7 @@ export async function install(client: Client, request: Request): Promise<any> {
         client.AddonUUID = "00000000-0000-0000-0000-000000005a9e";
         const service = new MyService(client);
 
-        // install PepperiUsageMonitor code job
+        // install UsageMonitor code job
         let retValUsageMonitor = await InstallUsageMonitor(service);
         successUsageMonitor = retValUsageMonitor.success;
         errorMessage = "pepperi-usage installation failed on: " + retValUsageMonitor.errorMessage;
@@ -31,7 +31,7 @@ export async function install(client: Client, request: Request): Promise<any> {
 
         // Install scheme for Pepperi Usage Monitor settings
         try {
-            const PepperiUsageMonitorSettingsResponse = await service.papiClient.addons.data.schemes.post(PepperiUsageMonitorSettings);
+            const UsageMonitorSettingsResponse = await service.papiClient.addons.data.schemes.post(UsageMonitorSettings);
             console.log('pepperi-usage settings table installed successfully.');
         }
         catch (err) {
@@ -51,8 +51,13 @@ export async function install(client: Client, request: Request): Promise<any> {
             Key: distributor.InternalID.toString(),
             Data: data
         };
-        const settingsResponse = await service.papiClient.addons.data.uuid(client.AddonUUID).table('PepperiUsageMonitorSettings').upsert(settingsBodyADAL);
+        const settingsResponse = await service.papiClient.addons.data.uuid(client.AddonUUID).table('UsageMonitorSettings').upsert(settingsBodyADAL);
 
+        console.log('pepperi-usage addon installation succeeded.');
+        return {
+            success: true,
+            errorMessage: ''
+        };  
     }
     catch (err) {
         return {
@@ -81,6 +86,7 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
 }
 
 export async function upgrade(client: Client, request: Request): Promise<any> {
+    // New addon, no need for upgrade currently.
     return {success:true,resultObject:{}}
 }
 
@@ -88,13 +94,13 @@ export async function downgrade(client: Client, request: Request): Promise<any> 
     return {success:true,resultObject:{}}
 }
 
-const PepperiUsageMonitorSettings:AddonDataScheme = {
-    Name: 'PepperiUsageMonitorSettings',
+const UsageMonitorSettings:AddonDataScheme = {
+    Name: 'UsageMonitorSettings',
     Type: 'meta_data'
 };
 
-export const PepperiUsageMonitorTable:AddonDataScheme = {
-    Name: "PepperiUsageMonitor",
+export const UsageMonitorTable:AddonDataScheme = {
+    Name: "UsageMonitor",
     Type: "data"
 }
 
@@ -107,7 +113,7 @@ async function InstallUsageMonitor(service){
     try {
         // Install scheme for Pepperi Usage Monitor
         try {
-            await service.papiClient.addons.data.schemes.post(PepperiUsageMonitorTable);
+            await service.papiClient.addons.data.schemes.post(UsageMonitorTable);
             console.log('pepperi-usage table installed successfully.');
         }
         catch (err) {

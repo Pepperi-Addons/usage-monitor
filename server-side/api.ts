@@ -1,6 +1,6 @@
 import MyService from './my.service'
 import { Client, Request } from '@pepperi-addons/debug-server'
-import { PepperiUsageMonitorTable } from './installation'
+import { UsageMonitorTable } from './installation'
 
 // Function to be run from Pepperi Usage Monitor Addon Code Job
 export async function run_collect_data(client: Client, request: Request) {
@@ -12,7 +12,7 @@ export async function run_collect_data(client: Client, request: Request) {
     res_collect_data.Key = new Date(Date.now()).toISOString();
 
     // Insert results to ADAL
-    await papiClient.addons.data.uuid(client.AddonUUID).table(PepperiUsageMonitorTable.Name).upsert(res_collect_data,);
+    await papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorTable.Name).upsert(res_collect_data,);
 
     return res_collect_data;
 }
