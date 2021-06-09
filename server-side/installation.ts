@@ -69,7 +69,33 @@ export async function install(client: Client, request: Request): Promise<any> {
 
 export async function uninstall(client: Client, request: Request): Promise<any> {
     try {
-        //const responsePepperiUsageMonitorTable = await service.papiClient.post('/addons/data/schemes/PepperiUsageMonitor/purge',null, headersADAL);
+        client.AddonUUID = "00000000-0000-0000-0000-000000005a9e";
+        const service = new MyService(client);
+        const monitorSettings = await service.getMonitorSettings();
+
+        // unschedule UsageMonitor
+        let UsageMonitorCodeJobUUID = monitorSettings.UsageMonitorCodeJobUUID;
+        if(UsageMonitorCodeJobUUID != '') {
+            await service.papiClient.codeJobs.upsert({
+                UUID:UsageMonitorCodeJobUUID,
+                CodeJobName: "Pepperi Usage Monitor",
+                IsScheduled: false,
+                CodeJobIsHidden:true
+            });
+        }
+        console.log('pepperi-usage codejob unschedule succeeded.');
+
+        // purge ADAL tables
+        var headersADAL = {
+            "X-Pepperi-OwnerID": client.AddonUUID,
+           "X-Pepperi-SecretKey": client.AddonSecretKey
+        }
+
+        const responseUsageMonitorTable = await service.papiClient.post('/addons/data/schemes/UsageMonitor/purge', null, headersADAL);
+        const responseSettingsTable = await service.papiClient.post('/addons/data/schemes/UsageMonitorSettings/purge', null, headersADAL);
+
+        console.log('pepperi-usage uninstallation succeeded.');
+
         return {
             success:true,
             errorMessage:'',
