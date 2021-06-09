@@ -16,7 +16,6 @@ export async function install(client: Client, request: Request): Promise<any> {
     try {
         let successUsageMonitor = true;
         let errorMessage = '';
-        let resultObject = {};
         client.AddonUUID = "00000000-0000-0000-0000-000000005a9e";
         const service = new MyService(client);
 
@@ -30,8 +29,29 @@ export async function install(client: Client, request: Request): Promise<any> {
         }
         console.log('pepperi-usage installation succeeded.');
 
+        // Install scheme for Pepperi Usage Monitor settings
+        try {
+            const PepperiUsageMonitorSettingsResponse = await service.papiClient.addons.data.schemes.post(PepperiUsageMonitorSettings);
+            console.log('pepperi-usage settings table installed successfully.');
+        }
+        catch (err) {
+            return {
+                success: false,
+                errorMessage: ('message' in err) ? err.message : 'Could not install pepperi-usage. Settings table creation failed.',
+            }
+        }
+
         const data = {};
         const distributor = await GetDistributor(service.papiClient);
+        data["Name"] = distributor.Name;
+        data[retValUsageMonitor["codeJobName"]] = retValUsageMonitor["codeJobUUID"];
+
+        // Add code job info to settings table.
+        const settingsBodyADAL= {
+            Key: distributor.InternalID.toString(),
+            Data: data
+        };
+        const settingsResponse = await service.papiClient.addons.data.uuid(client.AddonUUID).table('PepperiUsageMonitorSettings').upsert(settingsBodyADAL);
 
     }
     catch (err) {
@@ -68,7 +88,12 @@ export async function downgrade(client: Client, request: Request): Promise<any> 
     return {success:true,resultObject:{}}
 }
 
-export const PepperiUsageMonitorTable: AddonDataScheme = {
+const PepperiUsageMonitorSettings:AddonDataScheme = {
+    Name: 'PepperiUsageMonitorSettings',
+    Type: 'meta_data'
+};
+
+export const PepperiUsageMonitorTable:AddonDataScheme = {
     Name: "PepperiUsageMonitor",
     Type: "data"
 }
