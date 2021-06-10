@@ -33,12 +33,12 @@ export async function install(client: Client, request: Request): Promise<any> {
 
         // Install scheme for Pepperi Usage Monitor settings
         try {
-            //const UsageMonitorSettingsResponse = await service.papiClient.addons.data.schemes.post(UsageMonitorSettings);
-            const headers = {
+            const UsageMonitorSettingsResponse = await service.papiClient.addons.data.schemes.post(UsageMonitorSettings);
+            /*const headers = {
                 "X-Pepperi-OwnerID": client.AddonUUID,
                 "X-Pepperi-SecretKey": client.AddonSecretKey
             };
-            const responseSettingsTable1 = await service.papiClient.post('/addons/data/schemes', UsageMonitorSettings, headers);
+            const responseSettingsTable1 = await service.papiClient.post('/addons/data/schemes', UsageMonitorSettings, headers);*/
             
             console.log('pepperi-usage settings table installed successfully.');
         }
@@ -148,12 +148,12 @@ async function InstallUsageMonitor(service){
     try {
         // Install scheme for Pepperi Usage Monitor
         try {
-            //await service.papiClient.addons.data.schemes.post(UsageMonitorTable);
-            const headers = {
+            await service.papiClient.addons.data.schemes.post(UsageMonitorTable);
+            /*const headers = {
                 "X-Pepperi-OwnerID": service.client.AddonUUID,
                 "X-Pepperi-SecretKey": service.client.AddonSecretKey
             };
-            const responseSettingsTable1 = await service.papiClient.post('/addons/data/schemes', UsageMonitorTable, headers);
+            const responseSettingsTable1 = await service.papiClient.post('/addons/data/schemes', UsageMonitorTable, headers);*/
             console.log('pepperi-usage table installed successfully.');
         }
         catch (err) {
