@@ -9,7 +9,6 @@ export async function run_collect_data(client: Client, request: Request) {
 
     // Run main data collection function
     const res_collect_data = await collect_data(client, request);
-    res_collect_data.Key = new Date(Date.now()).toISOString();
 
     // Insert results to ADAL
     await papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorTable.Name).upsert(res_collect_data,);
@@ -241,7 +240,7 @@ export async function collect_data(client: Client, request: Request) {
         Usage:{},
         Data:{},
         Errors:{},
-        Key:"",
+        Key:new Date(Date.now()).toISOString(),
         ExpirationDateTime:getExpirationDateTime()
     };
     result.Setup = {
