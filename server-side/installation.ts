@@ -57,7 +57,8 @@ export async function install(client: Client, request: Request): Promise<any> {
         // Add code job info to settings table.
         const settingsBodyADAL= {
             Key: distributor.InternalID.toString(),
-            Data: data
+            Data: data,
+            ExpirationDateTime: getExpirationDateTime()
         };
         const settingsResponse = await service.papiClient.addons.data.uuid(client.AddonUUID).table('UsageMonitorSettings').upsert(settingsBodyADAL);
 
@@ -246,4 +247,11 @@ function getCronExpression() {
     ]
     const index = Math.floor(Math.random() * expressions.length);
     return expressions[index];
+}
+
+export function getExpirationDateTime(){
+    // the ExpirationDateTime is 2 years
+    let expirationDateTime = new Date(Date.now());
+    expirationDateTime.setFullYear(expirationDateTime.getFullYear()+2);
+    return expirationDateTime.toISOString();
 }

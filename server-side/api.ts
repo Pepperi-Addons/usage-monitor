@@ -1,6 +1,6 @@
 import MyService from './my.service'
 import { Client, Request } from '@pepperi-addons/debug-server'
-import { UsageMonitorTable } from './installation'
+import { getExpirationDateTime, UsageMonitorTable } from './installation'
 
 // Function to be run from Pepperi Usage Monitor Addon Code Job
 export async function run_collect_data(client: Client, request: Request) {
@@ -241,7 +241,8 @@ export async function collect_data(client: Client, request: Request) {
         Usage:{},
         Data:{},
         Errors:{},
-        Key:""
+        Key:"",
+        ExpirationDateTime:getExpirationDateTime()
     };
     result.Setup = {
         LicensedUsers: null,
