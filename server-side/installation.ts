@@ -16,8 +16,6 @@ export async function install(client: Client, request: Request): Promise<any> {
     try {
         let successUsageMonitor = true;
         let errorMessage = '';
-        client.AddonUUID = "00000000-0000-0000-0000-000000005a9e";
-        client.AddonSecretKey = "c5d9ca1b-79c7-4f1f-823e-6ba56715aad1";
         
         const service = new MyService(client);
 
