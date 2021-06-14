@@ -55,8 +55,7 @@ export async function install(client: Client, request: Request): Promise<any> {
         // Add code job info to settings table.
         const settingsBodyADAL= {
             Key: distributor.InternalID.toString(),
-            Data: data,
-            ExpirationDateTime: getExpirationDateTime()
+            Data: data
         };
         const settingsResponse = await service.papiClient.addons.data.uuid(client.AddonUUID).table('UsageMonitorSettings').upsert(settingsBodyADAL);
 
