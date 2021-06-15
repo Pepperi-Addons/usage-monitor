@@ -2,6 +2,24 @@ import MyService from './my.service'
 import { Client, Request } from '@pepperi-addons/debug-server'
 import { getExpirationDateTime, UsageMonitorTable } from './installation'
 
+// Function to be run from PNS trigger for every ADAL new record
+export async function triggered_by_pns(client: Client, request: Request) {
+    const service = new MyService(client);
+    let papiClient = service.papiClient;
+
+    try {
+        request.body.Key = new Date(Date.now()).toISOString();
+        await papiClient.addons.data.uuid(client.AddonUUID).table("UsageMonitorDebug").upsert(request.body);
+    }
+    catch (error) {
+        const errorObj = {
+            Key: new Date(Date.now()).toISOString(),
+            Message: error.message
+        };
+        await papiClient.addons.data.uuid(client.AddonUUID).table("UsageMonitorDebug").upsert(errorObj);
+    }
+}
+
 // Function to be run from Pepperi Usage Monitor Addon Code Job
 export async function run_collect_data(client: Client, request: Request) {
     const service = new MyService(client);
