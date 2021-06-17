@@ -254,14 +254,14 @@ export async function collect_data(client: Client, request: Request) {
 
     // Result object construction
     const result = {
-        Setup : {},
-        Usage : {},
-        Data : {},
-        Errors : {},
-        Key : new Date(Date.now()).toISOString(),
-        ExpirationDateTime : service.getExpirationDateTime(),
-        Year : service.getFullYear(),
-        Week : service.getNumberOfWeek(),
+        Setup: {},
+        Usage: {},
+        Data: {},
+        Errors: {},
+        Key: new Date(Date.now()).toISOString(),
+        ExpirationDateTime: service.getExpirationDateTime(),
+        Year: service.getFullYear(),
+        Week: service.getNumberOfWeek(),
         DistributorUUID: (await service.GetDistributor(papiClient)).UUID
     };
     result.Setup = {
