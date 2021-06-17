@@ -48,7 +48,7 @@ export async function install(client: Client, request: Request): Promise<any> {
         }
 
         const data = {};
-        const distributor = await GetDistributor(service.papiClient);
+        const distributor = await service.GetDistributor(service.papiClient);
         data["Name"] = distributor.Name;
         data[retValUsageMonitor["codeJobName"]] = retValUsageMonitor["codeJobUUID"];
 
@@ -194,17 +194,6 @@ async function InstallUsageMonitor(service){
     return retVal;
 }
 
-async function GetDistributor(papiClient){
-    let distributorData = await papiClient.get('/distributor');
-    const machineData = await papiClient.get('/distributor/machine');
-    const distributor ={
-        InternalID: distributorData.InternalID,
-        Name: distributorData.Name,
-        MachineAndPort: machineData.Machine + ":" + machineData.Port
-    };
-    return distributor;
-}
-
 function getCronExpression() {
     let expressions = [
         '0 19 * * FRI',
@@ -244,11 +233,4 @@ function getCronExpression() {
     ]
     const index = Math.floor(Math.random() * expressions.length);
     return expressions[index];
-}
-
-export function getExpirationDateTime(){
-    // the ExpirationDateTime is 2 years
-    let expirationDateTime = new Date(Date.now());
-    expirationDateTime.setFullYear(expirationDateTime.getFullYear()+2);
-    return expirationDateTime.toISOString();
 }

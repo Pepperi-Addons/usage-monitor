@@ -1,6 +1,6 @@
 import MyService from './my.service'
 import { Client, Request } from '@pepperi-addons/debug-server'
-import { getExpirationDateTime, UsageMonitorTable } from './installation'
+import { UsageMonitorTable } from './installation'
 
 // Function to be run from PNS trigger for every ADAL new record
 export async function triggered_by_pns(client: Client, request: Request) {
@@ -254,12 +254,15 @@ export async function collect_data(client: Client, request: Request) {
 
     // Result object construction
     const result = {
-        Setup:{},
-        Usage:{},
-        Data:{},
-        Errors:{},
-        Key:new Date(Date.now()).toISOString(),
-        ExpirationDateTime:getExpirationDateTime()
+        Setup : {},
+        Usage : {},
+        Data : {},
+        Errors : {},
+        Key : new Date(Date.now()).toISOString(),
+        ExpirationDateTime : service.getExpirationDateTime(),
+        Year : service.getFullYear(),
+        Week : service.getNumberOfWeek(),
+        DistributorUUID: (await service.GetDistributor(papiClient)).UUID
     };
     result.Setup = {
         LicensedUsers: null,
