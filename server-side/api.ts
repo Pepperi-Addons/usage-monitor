@@ -73,6 +73,8 @@ export async function collect_data(client: Client, request: Request) {
     const imagesTask = papiClient.images.count({where:'ImageType=1'});
     const userDefinedTablesLinesTask = papiClient.userDefinedTables.count({include_deleted:false});
 
+    const distributorTask = service.GetDistributor(papiClient);
+
     // Await all regular tasks
     let actualUsersCount: any = null;
     try {
@@ -262,7 +264,7 @@ export async function collect_data(client: Client, request: Request) {
         ExpirationDateTime: service.getExpirationDateTime(),
         Year: service.getFullYear(),
         Week: service.getNumberOfWeek(),
-        DistributorUUID: (await service.GetDistributor(papiClient)).UUID
+        DistributorUUID: (await distributorTask).UUID
     };
     result.Setup = {
         LicensedUsers: null,
