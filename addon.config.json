@@ -1,6 +1,6 @@
 {
   "AddonUUID": "00000000-0000-0000-0000-000000005a9e",
-  "AddonVersion": "1.0.6",
+  "AddonVersion": "1.0.7",
   "DebugPort": 4400,
   "WebappBaseUrl": "https://app.sandbox.pepperi.com",
   "DefaultEditor": "main",
@@ -33,7 +33,7 @@
       {
         "ParentPackageName": "Usage Monitor",
         "PackageName": "Visualization",
-        "Description": "Visualization of data collected periodically"
+        "Description": "Data Visualization"
       }
     ],
     "Dependencies": {}
