@@ -1,6 +1,6 @@
 {
   "AddonUUID": "00000000-0000-0000-0000-000000005a9e",
-  "AddonVersion": "1.0.4",
+  "AddonVersion": "1.0.5",
   "DebugPort": 4400,
   "WebappBaseUrl": "https://app.sandbox.pepperi.com",
   "DefaultEditor": "main",
@@ -31,9 +31,9 @@
     "ClientStack": "ng10",
     "Editors": [
       {
-        "ParentPackageName": "CHANGE_TO_ADDON_CONTAINER_NAME",
-        "PackageName": "CHANGE_TO_ADDON_PATH",
-        "Description": "CHANGE_TO_ADDON_DESCRIPTION"
+        "ParentPackageName": "Usage Monitor",
+        "PackageName": "UsageMonitorVisualization",
+        "Description": "Visualization"
       }
     ],
     "Dependencies": {}
