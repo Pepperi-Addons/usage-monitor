@@ -25,19 +25,28 @@ export async function run_collect_data(client: Client, request: Request) {
     const service = new MyService(client);
     let papiClient = service.papiClient;
 
-    console.log("About to call collect_data...");
+    try {
+        console.log("About to call collect_data...");
 
-    // Run main data collection function
-    const res_collect_data = await collect_data(client, request);
+        // Run main data collection function
+        const res_collect_data = await collect_data(client, request);
 
-    console.log(`Call to collect_data ended, about to add data to table ${UsageMonitorTable.Name}.`);
+        console.log(`Call to collect_data ended, about to add data to table ${UsageMonitorTable.Name}.`);
 
-    // Insert results to ADAL
-    await papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorTable.Name).upsert(res_collect_data);
+        // Insert results to ADAL
+        await papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorTable.Name).upsert(res_collect_data);
 
-    console.log("Data added to table, leaving.");
+        console.log("Data added to table, leaving.");
 
-    return res_collect_data;
+        return res_collect_data;
+    }
+    catch (error)
+    {
+        return {
+            success: false,
+            errorMessage: ('message' in error) ? error.message : 'Unnknown error occurred, see logs.',
+        }
+    }
 }
 
 export async function collect_data(client: Client, request: Request) {
