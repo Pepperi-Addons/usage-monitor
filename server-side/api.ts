@@ -25,11 +25,17 @@ export async function run_collect_data(client: Client, request: Request) {
     const service = new MyService(client);
     let papiClient = service.papiClient;
 
+    console.log("About to call collect_data...");
+
     // Run main data collection function
     const res_collect_data = await collect_data(client, request);
 
+    console.log(`Call to collect_data ended, about to add data to table ${UsageMonitorTable.Name}.`);
+
     // Insert results to ADAL
-    await papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorTable.Name).upsert(res_collect_data,);
+    await papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorTable.Name).upsert(res_collect_data);
+
+    console.log("Data added to table, leaving.");
 
     return res_collect_data;
 }
@@ -39,6 +45,8 @@ export async function collect_data(client: Client, request: Request) {
     let papiClient = service.papiClient;
 
     let errors:{object:string, error:string}[] = [];
+
+    console.log("About to send async requests for data...");
     
     const usersTask = papiClient.users.count({include_deleted:false});
     const accountsTask = papiClient.accounts.count({include_deleted:false});
@@ -303,6 +311,8 @@ export async function collect_data(client: Client, request: Request) {
     }
 
     result.Errors = errors;
+
+    console.log("Finished all calls for data, leaving.");
     
     return result;
 }

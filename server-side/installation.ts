@@ -21,24 +21,17 @@ export async function install(client: Client, request: Request): Promise<any> {
 
         // install UsageMonitor code job
         let retValUsageMonitor = await InstallUsageMonitor(service);
-        successUsageMonitor = retValUsageMonitor.success;
-        errorMessage = "pepperi-usage installation failed on: " + retValUsageMonitor.errorMessage;
-        if (!successUsageMonitor){
-            console.error(errorMessage);
+        if (!retValUsageMonitor.success) {
+            console.error("pepperi-usage installation failed on: " + retValUsageMonitor.errorMessage);
             return retValUsageMonitor;
         }
-        console.log('pepperi-usage installation succeeded.');
+        console.log('Pepperi Usage addon table and code job installation succeeded.');
 
         // Install scheme for Pepperi Usage Monitor settings
         try {
-            const UsageMonitorSettingsResponse = await service.papiClient.addons.data.schemes.post(UsageMonitorSettings);
-            /*const headers = {
-                "X-Pepperi-OwnerID": client.AddonUUID,
-                "X-Pepperi-SecretKey": client.AddonSecretKey
-            };
-            const responseSettingsTable1 = await service.papiClient.post('/addons/data/schemes', UsageMonitorSettings, headers);*/
-            
-            console.log('pepperi-usage settings table installed successfully.');
+            console.log(`About to create settings table ${UsageMonitorSettings.Name}...`)
+            const UsageMonitorSettingsResponse = await service.papiClient.addons.data.schemes.post(UsageMonitorSettings);            
+            console.log('Settings table installed successfully.');
         }
         catch (err) {
             return {
@@ -57,9 +50,11 @@ export async function install(client: Client, request: Request): Promise<any> {
             Key: distributor.InternalID.toString(),
             Data: data
         };
+
+        console.log(`About to add data to settings table ${UsageMonitorSettings.Name}...`);
         const settingsResponse = await service.papiClient.addons.data.uuid(client.AddonUUID).table('UsageMonitorSettings').upsert(settingsBodyADAL);
 
-        console.log('pepperi-usage addon installation succeeded.');
+        console.log('Pepperi Usage addon installation succeeded.');
         return {
             success: true,
             errorMessage: ''
@@ -80,6 +75,7 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
         const monitorSettings = await service.getMonitorSettings();
 
         // unschedule UsageMonitor
+        console.log("About to remove code job Pepperi Usage Monitor...");
         let UsageMonitorCodeJobUUID = monitorSettings.UsageMonitorCodeJobUUID;
         if(UsageMonitorCodeJobUUID != '') {
             await service.papiClient.codeJobs.upsert({
@@ -97,6 +93,7 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
            "X-Pepperi-SecretKey": client.AddonSecretKey
         }
 
+        console.log("About to purge tables UsageMonitor and UsageMonitorSettings...")
         const responseUsageMonitorTable = await service.papiClient.post('/addons/data/schemes/UsageMonitor/purge', null, headersADAL);
         const responseSettingsTable = await service.papiClient.post('/addons/data/schemes/UsageMonitorSettings/purge', null, headersADAL);
 
@@ -137,7 +134,7 @@ export const UsageMonitorTable:AddonDataScheme = {
 }
 
 async function InstallUsageMonitor(service){
-    let retVal={
+    let retVal = {
         success: true,
         errorMessage: ''
     };
@@ -145,13 +142,9 @@ async function InstallUsageMonitor(service){
     try {
         // Install scheme for Pepperi Usage Monitor
         try {
+            console.log(`About to create table ${UsageMonitorTable.Name}...`);
             await service.papiClient.addons.data.schemes.post(UsageMonitorTable);
-            /*const headers = {
-                "X-Pepperi-OwnerID": service.client.AddonUUID,
-                "X-Pepperi-SecretKey": service.client.AddonSecretKey
-            };
-            const responseSettingsTable1 = await service.papiClient.post('/addons/data/schemes', UsageMonitorTable, headers);*/
-            console.log('pepperi-usage table installed successfully.');
+            console.log(`Table ${UsageMonitorTable.Name} created successfully.`);
         }
         catch (err) {
             retVal = {
@@ -160,28 +153,33 @@ async function InstallUsageMonitor(service){
             }
         }
 
-        // Install code job for Pepperi Usage Monitor
-        try {
-            const codeJob = await service.papiClient.codeJobs.upsert({
-                CodeJobName: "Pepperi Usage Monitor",
-                Description: "Pepperi Usage Monitor",
-                Type: "AddonJob",
-                IsScheduled: true,
-                CronExpression: getCronExpression(),
-                AddonPath: "api",
-                FunctionName: "run_collect_data",
-                AddonUUID: service.client.AddonUUID,
-                NumberOfTries: 30,
-            });
-            retVal["codeJobName"] = 'UsageMonitorCodeJobUUID';
-            retVal["codeJobUUID"] = codeJob.UUID;
-            console.log('pepperi-usage code job installed successfully.');
-        }
-        catch (err)
+        if (retVal.success)
         {
-            retVal = {
-                success: false,
-                errorMessage: ('message' in err) ? err.message : 'Could not install pepperi-usage. Code job creation failed.',
+            // Install code job for Pepperi Usage Monitor
+            try {
+                console.log("About to create code job Pepperi Usage Monitor...");
+                const codeJob = await service.papiClient.codeJobs.upsert({
+                    CodeJobName: "Pepperi Usage Monitor",
+                    Description: "Pepperi Usage Monitor",
+                    Type: "AddonJob",
+                    IsScheduled: true,
+                    CronExpression: getCronExpression(),
+                    AddonPath: "api",
+                    FunctionName: "run_collect_data",
+                    AddonUUID: service.client.AddonUUID,
+                    NumberOfTries: 30,
+                });
+                console.log("Code job Pepperi Usage Monitor created successfully.");
+
+                retVal["codeJobName"] = 'UsageMonitorCodeJobUUID';
+                retVal["codeJobUUID"] = codeJob.UUID;
+            }
+            catch (err)
+            {
+                retVal = {
+                    success: false,
+                    errorMessage: ('message' in err) ? err.message : 'Could not install pepperi-usage. Code job creation failed.',
+                }
             }
         }
     }
@@ -191,6 +189,7 @@ async function InstallUsageMonitor(service){
             errorMessage: ('message' in err) ? err.message : 'Cannot install pepperi-usage. Unknown error occured',
         };
     }
+
     return retVal;
 }
 
