@@ -1,0 +1,34 @@
+    <div class="addon-page-container">
+
+        <pep-top-bar >
+            <div header-start-content>
+                <button mat-button class="pep-spacing-element pep-button icon-button md weak pull-left flip"
+                (click)="goBack();">
+                <mat-icon>
+                    <pep-icon name="arrow_left_alt"></pep-icon>
+                </mat-icon>
+                </button>
+                <div *ngIf="atd?.ExternalID?.length > 0" class="pep-spacing-element title pull-left flip">
+                    <span [title]="atd?.ExternalID" >{{ atd?.ExternalID }} - {{ type | translate }}</span>
+                </div>
+            </div>
+        </pep-top-bar>
+
+        <div class="main-content ">
+            <div class="content">
+                <mat-tab-group
+                    dynamicHeight #tabGroup
+                    [selectedIndex]="activeTabIndex"
+                    (selectedTabChange)="tabClick($event)"
+                    animationDuration="0ms" class="fixed-header"
+                >
+                    <mat-tab  *ngFor="let tab of tabs; let i = index; "
+                    id="tab.AddonUUID"  label="{{ tab.title | translate}}">
+                    </mat-tab>
+                </mat-tab-group>
+                <addon-proxy #addonProxy *ngIf="activeTab" [hostObject]="activeTab"
+                        (hostEvents)="onAddonChange($event);"></addon-proxy>
+            </div>
+        </div>
+
+    </div>

@@ -1,9 +1,9 @@
 {
-  "$schema": "./../../node_modules/@angular/cli/lib/config/schema.json",
+  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
   "version": 1,
   "newProjectRoot": "projects",
   "projects": {
-    "plugin": {
+    "client-side": {
       "projectType": "application",
       "schematics": {
         "@schematics/angular:component": {
@@ -12,25 +12,54 @@
       },
       "root": "",
       "sourceRoot": "src",
-      "prefix": "app",
+      "prefix": "addon",
       "architect": {
         "build": {
-          "builder": "@angular-devkit/build-angular:browser",
+          "builder": "@angular-builders/custom-webpack:browser",
           "options": {
-            "outputPath": "dist/plugin",
+            "outputPath": "../publish/editors",
             "index": "src/index.html",
             "main": "src/main.ts",
             "polyfills": "src/polyfills.ts",
             "tsConfig": "tsconfig.json",
-            "aot": false,
+            "sourceMap": false,
+            "aot": true,
+            "stylePreprocessorOptions": {
+                "includePaths": [
+                    "node_modules/@pepperi-addons",
+                    "node_modules"
+                ]
+            },
             "assets": [
-              "src/favicon.ico",
-              "src/assets"
+              "src/assets",
+              {
+                "glob": "**/*",
+                "input": "node_modules/@pepperi-addons/ngx-lib/src/assets",
+                "output": "/"
+              },
+              {
+                "glob": "**/*",
+                "input": "./src/assets/i18n/",
+                "output": "/"
+              }
+
             ],
             "styles": [
-              "src/styles.less"
             ],
-            "scripts": []
+            "scripts": [
+                "node_modules/systemjs/dist/extras/amd.min.js",
+                "node_modules/systemjs/dist/extras/named-exports.min.js",
+                "node_modules/systemjs/dist/extras/module-types.min.js",
+                "node_modules/systemjs/dist/extras/dynamic-import-maps.min.js",
+                "node_modules/systemjs/dist/extras/global.min.js",
+                "node_modules/systemjs/dist/extras/named-register.min.js",
+                "node_modules/systemjs/dist/extras/use-default.min.js"
+            ],
+            "customWebpackConfig": {
+              "path": "extra-webpack.config.js",
+              "libraryName": "client-side",
+              "libraryTarget": "umd"
+            }
           },
           "configurations": {
             "production": {
@@ -41,11 +70,8 @@
                 }
               ],
               "optimization": true,
-              "outputHashing": "all",
-              "sourceMap": false,
-              "extractCss": true,
+              "outputHashing": "none",
               "namedChunks": false,
-              "aot": true,
               "extractLicenses": true,
               "vendorChunk": false,
               "buildOptimizer": true,
@@ -54,30 +80,78 @@
                   "type": "initial",
                   "maximumWarning": "2mb",
                   "maximumError": "5mb"
+                },
+                {
+                  "type": "anyComponentStyle",
+                  "maximumWarning": "6kb",
+                  "maximumError": "10kb"
                 }
               ]
+            },
+            "development": {
+              "buildOptimizer": false,
+              "optimization": false,
+              "vendorChunk": true,
+              "extractLicenses": false,
+              "sourceMap": true,
+              "namedChunks": true,
+              "outputHashing": "none"
             }
-          }
+          },
+          "defaultConfiguration": "production"
         },
         "serve": {
-          "builder": "@angular-devkit/build-angular:dev-server",
+          "builder": "@angular-builders/custom-webpack:dev-server",
           "options": {
-            "browserTarget": "plugin:build"
+            "browserTarget": "client-side:build"
+
           },
           "configurations": {
             "production": {
-              "browserTarget": "plugin:build:production"
+              "browserTarget": "client-side:build:production"
+            },
+            "development": {
+                "browserTarget": "client-side:build:development"
             }
-          }
+
+            },
+            "defaultConfiguration": "development"
         },
         "extract-i18n": {
           "builder": "@angular-devkit/build-angular:extract-i18n",
           "options": {
-            "browserTarget": "plugin:build"
+            "browserTarget": "client-side:build"
+          }
+        },
+
+        "lint": {
+          "builder": "@angular-devkit/build-angular:tslint",
+          "options": {
+            "tsConfig": [
+              "tsconfig.json"
+            ],
+            "exclude": [
+              "**/node_modules/**"
+            ]
+          }
+        },
+        "e2e": {
+          "builder": "@angular-devkit/build-angular:protractor",
+          "options": {
+            "protractorConfig": "e2e/protractor.conf.js",
+            "devServerTarget": "client-side:serve"
+          },
+          "configurations": {
+            "production": {
+              "devServerTarget": "client-side:serve:production"
+            }
           }
         }
       }
     }
   },
-  "defaultProject": "plugin"
+  "defaultProject": "client-side",
+  "cli": {
+    "analytics": false
+  }
 }

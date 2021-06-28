@@ -1,0 +1,51 @@
+// .mat-tab-links {
+//     flex-flow: wrap;
+//   }
+
+// ::ng-deep .mat-tab-header-pagination {
+//     display: none !important;
+// }
+
+// .mat-tab-label-container {
+//     display: flex;
+//     flex-grow: 1;
+//     overflow: hidden;
+//     z-index: 1;
+//     overflow-x: scroll !important;
+// }
+
+div  {
+    .title {
+        line-height: var(--pep-top-bar-field-height,2.5rem)
+    }
+}
+.main-content{
+    .content{
+        margin-top: 0;
+        .pep-tabs{
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 16px;
+            padding: 16px;
+            border-radius: 8px;
+        }
+    }
+
+    #myFrame{
+        // min-height: calc(100vh + 520px);
+        // overflow-x: hidden;
+        // html {
+        //     overflow-x: hidden !important;
+        //     body {
+        //         overflow-x: hidden !important;
+        //     }
+        // }
+
+    }
+}
+
+#myFrame{
+    min-height: calc(100vh - 230px);
+}
+

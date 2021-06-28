@@ -1,0 +1,43 @@
+@import 'ngx-lib/src/core/style/abstracts/variables';
+
+
+
+.total-items-container {
+    height: $top-bar-height-with-no-top;
+    display: flex;
+    align-items: center;
+}
+
+@mixin pepperi-list-total-component-theme($pepperi-theme) {
+    .total-items {
+        color: get-pep-color($pepperi-theme, color-text, color-dimmed);
+
+        .number {
+            color: get-pep-color($pepperi-theme, color-text, color-main);
+        }
+
+    }
+}
+
+
+
+.left-container{
+    display: flex;
+    align-items: center;
+}
+
+:host ::ng-deep pep-list {
+    .table-header {
+        top: 136px !important;
+    }
+}
+
+
+.plugin-page-container{
+    .main-content {
+        .content{
+            margin-top: 0 !important;
+        }
+    }
+}
+
