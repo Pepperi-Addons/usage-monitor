@@ -271,6 +271,14 @@ export async function collect_data(client: Client, request: Request) {
         errors.push({object:'UserDefinedTablesLines', error:('message' in error) ? error.message : 'general error'});
     }
 
+    let distributorData: any = null;
+    try {
+        distributorData = (await distributorTask);
+    } 
+    catch (error) {
+        errors.push({object:'distributorData', error:('message' in error) ? error.message : 'general error'});
+    }
+
     // Result object construction
     const result = {
         Setup: {},
@@ -281,7 +289,8 @@ export async function collect_data(client: Client, request: Request) {
         ExpirationDateTime: service.getExpirationDateTime(),
         Year: service.getFullYear(),
         Week: service.getNumberOfWeek(),
-        DistributorUUID: (await distributorTask).UUID
+        DistributorUUID: distributorData.UUID,
+        DistributorInternalID: distributorData.InternalID
     };
     result.Setup = {
         LicensedUsers: null,
