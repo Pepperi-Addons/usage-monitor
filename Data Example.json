@@ -1,0 +1,42 @@
+{
+    "Setup": {
+        "LicensedUsers": null,
+        "ActualUsers": 51,
+        "Accounts": 93,
+        "Items": 50768,
+        "Catalogs": 8,
+        "Contacts": 225,
+        "Buyers": 2,
+        "Profiles": 5,
+        "TransactionTypes": 74,
+        "ActivityTypes": 9,
+        "AccountTypes": 4,
+        "TransactionFields": 110,
+        "ActivityFields": 66,
+        "TransactionLineFields": 68,
+        "ItemFields": 73,
+        "AccountFields": 77,
+        "UserDefinedTables": 29,
+        "SecurityGroups": null
+    },
+    "Usage": {
+        "WorkingUsers": 2,
+        "WorkingBuyers": 0
+    },
+    "Data": {
+        "NucleusTransactions": 598,
+        "NucleusActivities": 217,
+        "NucleusTransactionLines": 745,
+        "DatabaseAllActivities": null,
+        "Images": 46,
+        "UserDefinedTablesLines": 100932,
+        "Attachments": null
+    },
+    "Errors": [],
+    "Key": "2021-06-29T09:08:09.106Z",
+    "ExpirationDateTime": "2023-06-29T09:08:09.106Z",
+    "Year": 2021,
+    "Week": 27,
+    "DistributorUUID": "8513b815-4487-4f16-97ef-2062d8dbde34",
+    "DistributorInternalID": 1110703
+}
