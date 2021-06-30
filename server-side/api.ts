@@ -56,6 +56,8 @@ export async function collect_data(client: Client, request: Request) {
     let errors:{object:string, error:string}[] = [];
 
     console.log("About to send async requests for data...");
+
+    //console.log(service.functionName());
     
     const usersTask = papiClient.users.count({include_deleted:false});
     const accountsTask = papiClient.accounts.count({include_deleted:false});

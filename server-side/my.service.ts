@@ -60,6 +60,35 @@ class MyService {
         };
         return distributor;
     }
+
+    /*findFirstOccurrence = (string, searchElements, fromIndex = 0) => {
+        let min = string.length;
+        for (let i = 0; i < searchElements.length; i += 1) {
+          const occ = string.indexOf(searchElements[i], fromIndex);
+          if (occ !== -1 && occ < min) {
+            min = occ;
+          }
+        }
+        return (min === string.length) ? -1 : min;
+      }
+      
+    functionName = (levelsUp: number = 1, func: any = null) => {
+        if (func) {
+          if (func.name) {
+            return func.name;
+          }
+          const result = /^function\s+([\w\$]+)\s*\(/.exec(func.toString());
+          return result ? result[1] : '';
+        }
+        const obj:any = {};
+        Error.captureStackTrace(obj, this.functionName);
+        //const {stack} = obj;
+        const stack = obj.stack;
+        const newStack = stack.split("\n").slice(levelsUp).join("\n"); 
+        const firstCharacter = newStack.indexOf('at ') + 3;
+        const lastCharacter = this.findFirstOccurrence(newStack, [' ', ':', '\n'], firstCharacter);
+        return newStack.slice(firstCharacter, lastCharacter);
+      }*/
 }
 
 export default MyService;
