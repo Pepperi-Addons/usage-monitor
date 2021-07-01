@@ -2,6 +2,59 @@ import MyService from './my.service'
 import { Client, Request } from '@pepperi-addons/debug-server'
 import { UsageMonitorTable } from './installation'
 
+export async function get_all_data(client: Client, request: Request) {
+    const service = new MyService(client);
+    let papiClient = service.papiClient;
+
+    try {
+        // Get all data from table
+        var all_data = await papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorTable.Name).iter().toArray();
+
+        // Sort data from oldest to newest
+        var sorted_all_data = all_data.sort((a, b) => 
+            (a.ModificationDateTime !== undefined && b.ModificationDateTime !== undefined && a.ModificationDateTime > b.ModificationDateTime) ? 1 : -1);
+        if (sorted_all_data && sorted_all_data !== undefined)
+            return sorted_all_data;
+        else
+            return null;
+    }
+    catch (error) {
+        return {
+            success: false,
+            errorMessage: ('message' in error) ? error.message : 'Unnknown error occurred, see logs.',
+        } 
+    }
+}
+
+export async function get_latest_data(client: Client, request: Request) {
+    const service = new MyService(client);
+    let papiClient = service.papiClient;
+
+    try {
+
+        // Can't get newest record from adal because 'ModificationDateTime' isn't indexed.
+        //var latest_data = await papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorTable.Name).find(
+        //  {order_by:'ModificationDateTime', page_size:1, page:1});
+
+        // Get all data from table
+        var all_data = await papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorTable.Name).iter().toArray();
+
+        // Sort data from newest to oldest in order to return the newest
+        var sorted_all_data = all_data.sort((a, b) => 
+            (a.ModificationDateTime !== undefined && b.ModificationDateTime !== undefined && a.ModificationDateTime < b.ModificationDateTime) ? 1 : -1);
+        if (sorted_all_data && sorted_all_data !== undefined && sorted_all_data.length > 0)
+            return sorted_all_data[0];
+        else
+            return null;
+    }
+    catch (error) {
+        return {
+            success: false,
+            errorMessage: ('message' in error) ? error.message : 'Unnknown error occurred, see logs.',
+        } 
+    }
+}
+
 // Function to be run from PNS trigger for every ADAL new record
 export async function triggered_by_pns(client: Client, request: Request) {
     const service = new MyService(client);
