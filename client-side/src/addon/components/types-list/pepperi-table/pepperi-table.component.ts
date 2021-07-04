@@ -9,7 +9,7 @@ import { PepListComponent } from '@pepperi-addons/ngx-lib/list';
   <pep-list
       [firstFieldAsLink]="false"
       [isReport]="true"
-      [supportSorting]="true"
+      [supportSorting]="false"
       [supportResizing]="false"
       [selectionTypeForActions]="'single'"
       [noDataFoundMsg]="'No data'"
