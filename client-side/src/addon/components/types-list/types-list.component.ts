@@ -261,8 +261,9 @@ export class TypesListComponent implements OnInit {
         const body = { RelationName: `${relationTypesEnum[this.type]}TypeListMenu`};
         // debug locally
         //  const menuEntries = await this.http.postHttpCall('http://localhost:4500/api/relations', body).toPromise().then(tabs => tabs.sort((x,y) => x.index - y.index));
-        const menuEntries = await this.http.postPapiApiCall(`/addons/api/${addonUUID}/api/relations`, body).toPromise().then(tabs => tabs.sort((x,y) => x.index - y.index));
-        menuEntries.forEach(menuEntry => apiNames.push(new PepMenuItem({ key: JSON.stringify(menuEntry), text: menuEntry.title})));
+        //const menuEntries = await this.http.postPapiApiCall(`/addons/api/${addonUUID}/api/relations`, body).toPromise().then(tabs => tabs.sort((x,y) => x.index - y.index));
+        //menuEntries.forEach(menuEntry => apiNames.push(new PepMenuItem({ key: JSON.stringify(menuEntry), text: menuEntry.title})));
+        apiNames.push(new PepMenuItem({ key: "Test", text: "Test"}))
         return apiNames;
     }
 
