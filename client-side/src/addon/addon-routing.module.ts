@@ -8,16 +8,8 @@ const routes: Routes = [{
     path: 'settings/:addon_uuid',
 
     children: [
-        // {
-        //     path: ':type/:type_id',
-        //     component: SettingsTabsComponent
-        // },
         {
-            path: ':type/:sub_type/:type_id/:tab_id',
-            component: SettingsTabsComponent
-        },
-        {
-            path: ':type/:sub_type',
+            path: 'Report',
             component: TypesListComponent
         }
     ]
