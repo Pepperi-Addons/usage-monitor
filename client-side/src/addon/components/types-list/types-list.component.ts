@@ -27,7 +27,9 @@ export class TypesListComponent implements OnInit {
     menuItems: Promise<PepMenuItem[]>;
     totalRows = 0;
     displayedColumns;
-    transactionTypes;
+    //transactionTypes;
+    latestData;
+    latestDataArray;
     searchString = '';
     searchAutoCompleteValues;
     addonUUID;
@@ -82,11 +84,14 @@ export class TypesListComponent implements OnInit {
     customizeDataRowField(object: any, key: any, dataRowField: any) {
 
         switch (key) {
+            case 'Data':
+                //dataRowField.FormattedValue = object[key]?.UserDefinedTablesLines?.toString();//JSON.stringify(object[key]);
+                dataRowField.FormattedValue = object[key];
+                break;
             case 'Description':
                 dataRowField.ColumnWidth = 65;
                 break;
-            case 'ExternalID':
-            case 'Name':
+            case 'Size':
                 dataRowField.AdditionalValue = object;
                 dataRowField.ColumnWidth = 35;
                 break;
@@ -116,21 +121,35 @@ export class TypesListComponent implements OnInit {
     }
 
     loadlist(change: ListSearch = { sortBy: 'Name', isAsc: true, searchString: '', type: this.type, subType: this.subType}) {
-        let url = this.buildUrlByParams(change);
+        let url = '/addons/api/00000000-0000-0000-0000-000000005A9E/api/get_latest_data';
         const search = change?.searchString;
-        if (search){
-            url = url + (` AND (Name like '%${search}%' OR Description like '%${search}%')`);
-            this.showListActions = false;
-        }
+        // if (search){
+        //     url = url + (` AND (Name like '%${search}%' OR Description like '%${search}%')`);
+        //     this.showListActions = false;
+        // }
         this.http.getPapiApiCall(encodeURI(url)).subscribe(
-            (transactionTypes) => {
-                this.displayedColumns = ['Name', 'Description'];
-                this.transactionTypes = transactionTypes;
-                this.totalRows = transactionTypes.length;
+            (latest_data_received) => {
+                this.latestData = latest_data_received;
+                var latest_data_array = this.json2array_2(this.latestData.Setup);
+                // for (var i in latest_data)
+                //     //latest_data_array.push([i, latest_data [i]]);
+                //     latest_data_array.push({i: latest_data[i]});
+
+                this.latestDataArray = latest_data_array;
+                this.displayedColumns = ['Data', 'Description', 'Size'];
+                this.totalRows = latest_data_array.length;
             },
             (error) => this.openErrorDialog(error),
             () => {}
         );
+    }
+
+    json2array_2(json){
+        return Object.keys(json).map(key => {const res = {Data:"", Size:0}; res.Data = key; res.Size = json[key]; return res;});
+    }
+
+    json2array(json){
+        return Object.keys(json).map(key => {const res = {}; res[key] = json[key]; return res;});
     }
 
     async onMenuClicked(){
