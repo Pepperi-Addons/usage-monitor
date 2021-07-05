@@ -1,6 +1,7 @@
 import MyService from './my.service'
 import { Client, Request } from '@pepperi-addons/debug-server'
 import { UsageMonitorTable } from './installation'
+import { createPepperiUsage } from './crm-connector'
 
 export async function get_all_data(client: Client, request: Request) {
     const service = new MyService(client);
@@ -89,7 +90,11 @@ export async function run_collect_data(client: Client, request: Request) {
         // Insert results to ADAL
         await papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorTable.Name).upsert(res_collect_data);
 
-        console.log("Data added to table, leaving.");
+        console.log("Data added to table successfully, about to send to CRM.");
+
+        await createPepperiUsage(res_collect_data);
+
+        console.log("Data sent to CRM successfully, leaving.");
 
         return res_collect_data;
     }
