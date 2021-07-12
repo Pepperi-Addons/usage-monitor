@@ -61,6 +61,19 @@ class MyService {
         return distributor;
     }
 
+    async getParameter(name: string, withDecryption: boolean = false): Promise<string> {
+        var AWS = require('aws-sdk'); // global?
+
+        let ssm = new AWS.SSM();
+        let options = {
+            Name: name,
+            WithDecryption: withDecryption
+        };
+        let paramValueObject =  await ssm.getParameter(options).promise();
+        let paramValue = paramValueObject.Parameter.Value;
+        return paramValue;
+    }
+
     /*findFirstOccurrence = (string, searchElements, fromIndex = 0) => {
         let min = string.length;
         for (let i = 0; i < searchElements.length; i += 1) {
