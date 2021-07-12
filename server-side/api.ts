@@ -102,7 +102,7 @@ export async function run_collect_data(client: Client, request: Request) {
     {
         return {
             success: false,
-            errorMessage: ('message' in error) ? error.message : 'Unnknown error occurred, see logs.',
+            errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
         }
     }
 }
