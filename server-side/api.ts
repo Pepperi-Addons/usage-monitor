@@ -92,9 +92,15 @@ export async function run_collect_data(client: Client, request: Request) {
 
         console.log("Data added to table successfully, about to send to CRM.");
 
-        await createPepperiUsage(res_collect_data);
-
-        console.log("Data sent to CRM successfully, leaving.");
+        try {
+            let clientSecret = await service.getParameter("CRMClientSecret", true);
+            await createPepperiUsage(clientSecret, res_collect_data);
+            console.log("Data sent to CRM successfully, leaving.");
+        }
+        catch (error)
+        {
+            return ('message' in error) ? error.message : 'Unknown error occurred, see logs.';
+        }
 
         return res_collect_data;
     }
