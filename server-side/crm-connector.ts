@@ -8,11 +8,12 @@ class CrmConnector
     grantType: string;
     token: any;
 
-	constructor() {
-		this.tenantId = ""; //Tenant ID
-		this.clientId = "";  //Application ID
-		this.clientSecret = ""; //Secret Key
-		this.resource = "https://org.crm.dynamics.com"; //Crm url
+	constructor(clientSecret: string) {
+		this.tenantId = "2f2b54b7-0141-4ba7-8fcd-ab7d17a60547"; //Tenant ID
+		this.clientId = "d55d9a33-6186-4e8e-b557-1f46fa2cfe09";  //Application ID
+		this.clientSecret = clientSecret; //Secret Key
+		//this.resource = "https://org.crm.dynamics.com"; //Crm url
+		this.resource = "https://wrntyltd.crm4.dynamics.com"; ; //Crm url
 		this.grantType = "client_credentials";
 		this.token = null;
 	}
@@ -84,10 +85,10 @@ class CrmConnector
 }
 
 //async function CreatePepperiUsage(inputObject: { Setup: { LicensedUsers: null; ActualUsers: number; Accounts: number; Items: number; Catalogs: number; Contacts: number; Buyers: number; Profiles: number; TransactionTypes: number; ActivityTypes: number; AccountTypes: number; TransactionFields: number; ActivityFields: number; TransactionLineFields: number; ItemFields: number; AccountFields: number; UserDefinedTables: number; SecurityGroups: null; }; Usage: { WorkingUsers: number; WorkingBuyers: number; }; Data: { NucleusTransactions: number; NucleusActivities: number; NucleusTransactionLines: number; DatabaseAllActivities: null; Images: number; UserDefinedTablesLines: number; Attachments: null; }; Errors: never[]; Key: string; ExpirationDateTime: string; Year: number; Week: number; DistributorUUID: string; DistributorInternalID: number; }) {
-export async function createPepperiUsage(inputObject: {}) {
+export async function createPepperiUsage(clientSecret: string, inputObject: {}) {
 	let new_pepperiusage = {"new_name": new Date().toISOString(), "new_json": JSON.stringify(inputObject)}
 
-	let crmConnector = new CrmConnector();
+	let crmConnector = new CrmConnector(clientSecret);
 	await crmConnector.authorize();
 	
 	var recordid = await crmConnector.createRecord("new_pepperiusages", new_pepperiusage);
