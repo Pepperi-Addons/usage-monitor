@@ -49,7 +49,7 @@ class MyService {
         return today.getFullYear();
     }
 
-    async GetDistributor(papiClient){
+    async GetDistributor(papiClient: PapiClient) {
         let distributorData = await papiClient.get('/distributor');
         const machineData = await papiClient.get('/distributor/machine');
         const distributor ={
