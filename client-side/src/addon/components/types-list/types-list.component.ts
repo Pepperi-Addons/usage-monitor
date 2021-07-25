@@ -133,6 +133,8 @@ export class TypesListComponent implements OnInit {
                 latest_data_array.push(...this.json2array_2(this.latestData.Data));
                 latest_data_array.push(...this.json2array_2(this.latestData.Usage));
 
+                latest_data_array.sort((a, b) => (a.Data > b.Data ? 1 : -1));
+
                 this.latestDataArray = latest_data_array;
                 this.displayedColumns = ['Data', 'Description', 'Size'];
                 this.totalRows = latest_data_array.length;
