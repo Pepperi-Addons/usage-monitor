@@ -3,6 +3,8 @@ import { TranslateService } from '@ngx-translate/core';
 import { PepDataConvertorService, FIELD_TYPE, ObjectSingleData, PepFieldData, PepRowData } from '@pepperi-addons/ngx-lib';
 import { PepListComponent } from '@pepperi-addons/ngx-lib/list';
 
+//[parentScroll]="listContainer"
+
 @Component({
   selector: 'pep-table',
   template: `<div class="list-container" #listContainer>
@@ -10,16 +12,26 @@ import { PepListComponent } from '@pepperi-addons/ngx-lib/list';
       [firstFieldAsLink]="false"
       [isReport]="true"
       [supportSorting]="false"
-      [supportResizing]="false"
+      [supportResizing]="true"
       [selectionTypeForActions]="'single'"
       [noDataFoundMsg]="'No data'"
-      [parentScroll]="listContainer"
       (listChange)="listChanged.emit($event)"
       (sortingChange)="sortingChanged.emit($event)"
       (fieldClick)="fieldClicked.emit($event)"
       (selectedItemsChange)="selectedItemsChanged.emit($event)">
   </pep-list>
-</div>`
+</div>`,
+    styles: [`
+
+        :host {
+            display: block;
+            height: inherit;
+        }
+
+        .list-container {
+            height: calc(100% - 1rem);
+        }
+    `]
 })
 export class PepperiTableComponent implements OnInit, OnChanges {
 

@@ -10,6 +10,14 @@ const routes: Routes = [{
     children: [
         {
             path: 'Report',
+            component: SettingsTabsComponent
+        },
+        {
+            path: 'data',
+            component: TypesListComponent
+        },
+        {
+            path: 'usage',
             component: TypesListComponent
         }
     ]
