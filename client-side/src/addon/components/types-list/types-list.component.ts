@@ -11,6 +11,7 @@ import { PepMenuItem, IPepMenuItemClickEvent } from '@pepperi-addons/ngx-lib/men
 import { MatDialog } from '@angular/material/dialog';
 import { PepListActionsComponent } from '@pepperi-addons/ngx-lib/list';
 import { PapiClient } from '@pepperi-addons/papi-sdk';
+import { IPepButtonClickEvent } from '@pepperi-addons/ngx-lib/button';
 
 @Component({
     selector: 'addon-pepperi-list-exmaple',
@@ -24,7 +25,8 @@ export class TypesListComponent implements OnInit {
     @ViewChild(PepperiTableComponent) table: PepperiTableComponent;
 
     // List variables
-    menuItems: Promise<PepMenuItem[]>;
+    leftMenuItems: Promise<PepMenuItem[]>;
+    rightMenuItems;
     totalRows = 0;
     displayedColumns;
     //transactionTypes;
@@ -44,7 +46,8 @@ export class TypesListComponent implements OnInit {
     @Input() subType;
     titlePipe = new TitleCasePipe();
     addonBaseURL = '';
-
+    weekNumber = 0;
+    lastUpdatedDate;
 
 
     constructor(
@@ -52,7 +55,6 @@ export class TypesListComponent implements OnInit {
         private http: PepHttpService,
         private dialogService: PepDialogService,
         private session: PepSessionService,
-        private dialog: MatDialog,
         private router: Router,
         private route: ActivatedRoute
 
@@ -69,7 +71,8 @@ export class TypesListComponent implements OnInit {
             this.type = params.type;
             this.subType = params.sub_type;
             const addonUUID = params.addon_uuid;
-            this.menuItems = this.getMenu(addonUUID);
+            this.leftMenuItems = this.getMenu(addonUUID);
+            this.rightMenuItems = this.getRightMenu();
             this.loadlist();
         })
 
@@ -113,31 +116,29 @@ export class TypesListComponent implements OnInit {
             this.selectedRows = selectedRowsCount;
     }
 
-    buildUrlByParams(params){
-        let url = '';
-        let type = ObjectType[this.type];
-        url = `/types?fields=Name,Description,UUID,InternalID&order_by=${params.sortBy} ${params.isAsc ? 'asc' : 'desc'}&where=Type=${type} AND Hidden=0`;
-        return url;
+    loadlist(change: ListSearch = { sortBy: 'Name', isAsc: true, searchString: '', type: this.type, subType: this.subType}) {
+        this.initListWithData('get_latest_data'); // Gets data from adal
     }
 
-    loadlist(change: ListSearch = { sortBy: 'Name', isAsc: true, searchString: '', type: this.type, subType: this.subType}) {
-        let url = '/addons/api/00000000-0000-0000-0000-000000005A9E/api/get_latest_data';
-        const search = change?.searchString;
-        // if (search){
-        //     url = url + (` AND (Name like '%${search}%' OR Description like '%${search}%')`);
-        //     this.showListActions = false;
-        // }
+    refreshButtonClicked(e: IPepButtonClickEvent) {
+        this.initListWithData('collect_data'); // Generates updated data
+    }
+
+    initListWithData(apiFunc: string) {
+        let url = '/addons/api/00000000-0000-0000-0000-000000005A9E/api/' + apiFunc;
         this.http.getPapiApiCall(encodeURI(url)).subscribe(
             (latest_data_received) => {
                 this.latestData = latest_data_received;
-                var latest_data_array = this.json2array_2(this.latestData.Setup);
-                // for (var i in latest_data)
-                //     //latest_data_array.push([i, latest_data [i]]);
-                //     latest_data_array.push({i: latest_data[i]});
+                let latest_data_array = this.json2array_2(this.latestData.Setup);
+                latest_data_array.push(...this.json2array_2(this.latestData.Data));
+                latest_data_array.push(...this.json2array_2(this.latestData.Usage));
 
                 this.latestDataArray = latest_data_array;
                 this.displayedColumns = ['Data', 'Description', 'Size'];
                 this.totalRows = latest_data_array.length;
+
+                this.weekNumber = latest_data_received.Week;
+                this.lastUpdatedDate = new Date(latest_data_received.Key).toLocaleString();
             },
             (error) => this.openErrorDialog(error),
             () => {}
@@ -152,46 +153,16 @@ export class TypesListComponent implements OnInit {
         return Object.keys(json).map(key => {const res = {}; res[key] = json[key]; return res;});
     }
 
-    async onMenuClicked(){
-        const actions = this.listActions.actions;
-        const filteredActionsBySelectionMode = actions.filter( action  =>{
-            const addon: RemoteModuleOptions = JSON.parse(action.key);
-            return this.selectedRows > 1 ? addon.multiSelection === 'true' : true;
-        });
+    async onLeftMenuClicked() {
+    }
 
-        // const filteredActionsByApi = await this.http.postHttpCall(`http://localhost:4500/api/filter_entries`, { addons:filteredActionsBySelectionMode}).toPromise();
-        const filteredActionsByApi = await this.http.postPapiApiCall(`/addons/api/${this.addonUUID}/api/filter_entries`, { addons:filteredActionsBySelectionMode}).toPromise();
-        this.listActions.actions = filteredActionsByApi;
+    async onRightMenuClicked() {
     }
 
     onMenuItemClicked(e: IPepMenuItemClickEvent): void{
-        const remoteModule: RemoteModuleOptions = JSON.parse(e?.source?.key);
-        const selectedRows = this.table?.getSelectedItemsData()?.rows;
-        const rowData = this.table?.getItemDataByID(selectedRows[0]);
-        const atdInfo = rowData?.Fields[0]?.AdditionalValue ? rowData.Fields[0].AdditionalValue : null;
-        // Generic
-        remoteModule.addonData = { atd: atdInfo, selectedRows };
-
-        switch (remoteModule.type){
-                    case 'AddonAPI':
-                        if (remoteModule.remoteEntry) {
-                           this.runAddonApiEntry(remoteModule);
-                        }
-                        break;
-                    case 'Navigate':
-                          const path = remoteModule.remoteEntry
-                                .replace('TYPE', this.route.snapshot.params.type)
-                                .replace('SUB_TYPE', this.route.snapshot.params.sub_type)
-                                .replace('TYPE_ID', atdInfo['InternalID']);
-                          this.router.navigate([`settings/${remoteModule.uuid}/${path}`]);
-                        break;
-                    case 'NgComponent':
-                        if (remoteModule.uuid){
-                            this.openAddonInDialog(remoteModule);
-                        }
-                        break;
-
-        }
+        const key = e?.source?.key;
+        //alert(`Menu option ${key} not implemented yet`);
+        this.openDefaultDialog(key, "Not implemented yet");
     }
 
     openAddonInDialog(remoteModule: RemoteModuleOptions): void {
@@ -201,42 +172,6 @@ export class TypesListComponent implements OnInit {
         this.dialogRef = this.dialogService
           .openDialog(this.dialogTemplate, {addon: remoteModule}, config)
             .afterOpened().subscribe((res) => {});
-    }
-
-    runAddonApiEntry(remoteModule: RemoteModuleOptions){
-        const dialogData: PepDialogData = {
-            content: this.translate.instant('Confirmation_Message',{title: remoteModule.title}),
-            title: remoteModule.title,
-            actionsType: "cancel-continue",
-            actionButtons: null,
-            showClose: true,
-            showFooter: true,
-            showHeader: true
-        }
-        if (remoteModule?.confirmation){
-
-            const dialogRef = this.dialogService.openDefaultDialog(dialogData);
-             dialogRef.afterClosed().subscribe(async confirmed =>{
-                 if (confirmed){
-
-                     this.postAddonApi(remoteModule, dialogData);
-                 }
-            });
-        }
-        else {
-            this.postAddonApi(remoteModule, dialogData);
-        }
-
-    }
-
-    async postAddonApi(remoteModule: RemoteModuleOptions, dialogData){
-        remoteModule.addonData['objectType'] = this.type;
-        remoteModule.addonData['objectId'] = remoteModule.addonData['atd'].InternalID;
-        //  const success = await this.http.postHttpCall(`http://localhost:4500/${remoteModule.remoteEntry}`, remoteModule.addonData).toPromise();
-        const success = await this.http.postPapiApiCall(`/addons/api/${this.addonUUID}/${remoteModule.remoteEntry}`, remoteModule.addonData).toPromise();
-        dialogData.content = this.translate.instant(success ?  "AddonApi_Dialog_Success" : "AddonApi_Dialog_Failure",{ taskName: remoteModule.title});
-        dialogData.type = "close";
-        this.dialogService.openDefaultDialog(dialogData).afterClosed().subscribe(async confirmed => this.loadlist());
     }
 
     closeDialog(e = null){
@@ -249,40 +184,21 @@ export class TypesListComponent implements OnInit {
         }
     }
 
-    addObject(){
-        const dialogRef = this.dialogService.openDialog(
-            AddTypeDialogComponent,
-            { value: 'value', type: this.translate.instant(this.type), showAAComplient: 'showAAComplient' });
-        dialogRef.afterClosed().subscribe(atd => this.createObject(atd));
-    }
-
-    createObject(atd){
-        if (atd) {
-            const body = {
-                ExternalID: atd.data.name,
-                Description: atd.data.description
-            };
-            this.http.postPapiApiCall(`/meta_data/${this.type}/types`, body)
-                        .subscribe(res => {
-                            this.router.navigate([`/settings/${this.route.snapshot.params.addon_uuid}/${this.route.snapshot.params.type}/types/${res.InternalID}/general`]);
-                            // this.loadlist();
-                        }, err => this.openErrorDialog(err));
-        }
-    }
-
-    onSearchChanged(e){
-        const value = e?.target?.value || e?.value;
-        this.loadlist({sortBy: 'Name', isAsc: true, searchString: value, type: this.type, subType: this.subType });
-    }
-
     async getMenu(addonUUID): Promise<PepMenuItem[]> {
         const apiNames: Array<PepMenuItem> = [];
-        const body = { RelationName: `${relationTypesEnum[this.type]}TypeListMenu`};
+        //const body = { RelationName: `${relationTypesEnum[this.type]}TypeListMenu`};
         // debug locally
         //  const menuEntries = await this.http.postHttpCall('http://localhost:4500/api/relations', body).toPromise().then(tabs => tabs.sort((x,y) => x.index - y.index));
         //const menuEntries = await this.http.postPapiApiCall(`/addons/api/${addonUUID}/api/relations`, body).toPromise().then(tabs => tabs.sort((x,y) => x.index - y.index));
         //menuEntries.forEach(menuEntry => apiNames.push(new PepMenuItem({ key: JSON.stringify(menuEntry), text: menuEntry.title})));
-        apiNames.push(new PepMenuItem({ key: "Test", text: "Test"}))
+        apiNames.push(new PepMenuItem({ key: "MoreInfo", text: "More Info"}))
+        apiNames.push(new PepMenuItem({ key: "Update", text: "Update"}))
+        return apiNames;
+    }
+
+    getRightMenu() : PepMenuItem[] {
+        const apiNames: Array<PepMenuItem> = [];
+        apiNames.push(new PepMenuItem({ key: "ExportToCSV", text: "Export to CSV"}));
         return apiNames;
     }
 
@@ -295,37 +211,11 @@ export class TypesListComponent implements OnInit {
         this.dialogService.openDefaultDialog(data);
     }
 
-    // deleteATD(atdInfo){
-    //     const msg = this.translate.instant('Delete_Validate');
-    //     const title = this.translate.instant('Delete');
-    //     const actionButtons = [
-    //         new PepDialogActionButton(this.translate.instant('Yes'),'main strong', () => this.setHidden(atdInfo.InternalID) ),
-    //         new PepDialogActionButton(this.translate.instant('No'),'main weak')
-    //     ];
-    //     const dialogData = new PepDialogData({ title, content: msg, type: 'custom', actionButtons });
-    //     this.dialogService.openDefaultDialog(dialogData)
-    //         .afterClosed().subscribe(res => {
-    //            if (typeof res === 'function') {
-    //             res();
-    //            }
-    //         });
-    // }
-
-    // setHidden(atdID){
-    //     const body = {
-    //         InternalID: atdID,
-    //         Hidden: true
-    //     }
-    //     return this.http.postPapiApiCall(`/meta_data/${this.type}/types`, body)
-    //                 .subscribe(res => this.loadlist(),
-    //                 error => {
-    //                     const title = this.translate.instant('MESSAGES.TITLE_NOTICE');
-    //                     const data = new PepDialogData({
-    //                         title,
-    //                         content: error
-    //                     });
-    //                     this.dialogService.openDefaultDialog(data);
-    //                 });
-    // }
-
+    openDefaultDialog(title: string, content: string) {
+        const data = new PepDialogData({
+            title,
+            content: content
+        });
+        this.dialogService.openDefaultDialog(data);
+    }
 }

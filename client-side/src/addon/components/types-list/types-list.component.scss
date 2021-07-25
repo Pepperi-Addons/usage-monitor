@@ -1,6 +1,10 @@
 @import 'ngx-lib/src/core/style/abstracts/variables';
+//@import 'ngx-lib/src/core/style/abstracts/mixins';
 
-
+:host {
+    display: block;
+    height: inherit;
+}
 
 .total-items-container {
     height: $top-bar-height-with-no-top;
@@ -26,11 +30,11 @@
     align-items: center;
 }
 
-:host ::ng-deep pep-list {
-    .table-header {
-        top: 136px !important;
-    }
-}
+// :host ::ng-deep pep-list {
+//     .table-header {
+//         top: 136px !important;
+//     }
+// }
 
 
 .plugin-page-container{
@@ -41,3 +45,6 @@
     }
 }
 
+::ng-deep .top-bar-container {
+    top: 187px !important;
+}

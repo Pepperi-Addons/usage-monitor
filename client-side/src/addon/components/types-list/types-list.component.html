@@ -1,64 +1,46 @@
 <!-- <main> -->
-<div class="addon-page-container">
+<!-- <div class="addon-page-container1"> -->
 
-    <pep-top-bar [title]="(totalRows === 1 ? 'ListTotal_ShowingResult' : 'ListTotal_ShowingResults') | translate: { totalRows: totalRows, objectType: type | translate  }">
+    <pep-top-bar [inline]="true" [title]="(totalRows === 1 ? 'ListTotal_ShowingResult' : 'ListTotal_ShowingResults') | translate: { totalRows: totalRows, objectType: type | translate  }">
         <div header-start-content>
-
         </div>
-        <div header-end-content>
-            <pep-search  class="pep-spacing-element pull-left flip" [autoCompleteValues]="searchAutoCompleteValues"
-                [value]="searchString" (search)="onSearchChanged($event)">
-        </pep-search>
-            <button mat-button (click)="addObject();"
-            class="pep-spacing-element pep-button icon-button md weak pull-right flip">
-            <mat-icon>
-                <pep-icon name="number_plus"></pep-icon>
-            </mat-icon>
-        </button>
-
+        <div header-end-content class="pep-spacing-element-negative">
+            <!-- <pep-list-actions class="pep-spacing-element" #listActions (menuClick)="onRightMenuClicked();" (actionClick)="onMenuItemClicked($event)" sizeType="sm" [actions]="rightMenuItems"></pep-list-actions> -->
+                <!-- <pep-search  class="pep-spacing-element pull-left flip" sizeType="sm" [autoCompleteValues]="searchAutoCompleteValues"
+                    [value]="searchString" (search)="onSearchChanged($event)">
+            </pep-search> -->
+                <!-- <button mat-button (click)="addObject();"
+                class="pep-spacing-element pep-button icon-button sm weak pull-right flip">
+                <mat-icon>
+                    <pep-icon name="number_plus"></pep-icon>
+                </mat-icon>
+            </button> -->
+            <p class="title-md">Last updated on week {{weekNumber}}: {{lastUpdatedDate}}</p>
+            <pep-button class="pep-spacing-element"
+                value="Update Now"
+                styleType="weak"
+                styleStateType="system"
+                sizeType="sm"
+                classNames="title-md"
+                [disabled]="false"
+                iconName="system_processing"
+                iconPosition="end"
+                [visible]="true"
+                (buttonClick)="refreshButtonClicked($event)">
+            </pep-button>
+            <pep-menu class="pep-spacing-element"
+                iconName="system_menu"
+                styleType="weak"
+                sizeType="sm"
+                classNames=""
+                [items]="rightMenuItems"
+                (menuItemClick)="onMenuItemClicked($event)"
+            ></pep-menu>
         </div>
-
-        <pep-list-actions #listActions *ngIf="showListActions" (menuClick)="onMenuClicked();" (actionClick)="onMenuItemClicked($event)" [actions]="menuItems | async"></pep-list-actions>
-
+        <pep-list-actions #listActions *ngIf="showListActions" (menuClick)="onLeftMenuClicked();" (actionClick)="onMenuItemClicked($event)" sizeType="sm" [actions]="leftMenuItems | async"></pep-list-actions>
+        
     </pep-top-bar>
-    <div class="main-content ">
-        <div class="content">
-            <pep-table [dataSource]="latestDataArray" [displayedColumns]="displayedColumns"
-             [customizeTable]="customizeDataRowField" (selectedItemsChanged)="selectedRowsChanged($event)"
-             (sortingChanged)="onSortingChanged($event);"></pep-table>
-
-        </div>
-    </div>
-
-</div>
-
-<ng-template #dialogTemplate>
-    <pep-dialog class="dialog-textarea-container" [title]="dialogAddon?.title | translate">
-      <ng-container pep-dialog-content>
-          <addon-proxy #addonTemplate [hostObject]="dialogAddon" (hostEvents)="onAddonChange($event);" ></addon-proxy>
-      </ng-container>
-    </pep-dialog>
-</ng-template>
-
-
-<!-- <ng-template #addTypeDialog>
-    <pep-dialog class="dialog-new-type-container" [title]="'Add_New_Header' | translate: {objectType: addTypeDialogData?.type }">
-        <ng-container pep-dialog-content>
-
-            <pep-textbox [mandatory]="true" [value]="atdName" [label]="'Name' | translate" (valueChange)="atdName = $event.value"></pep-textbox>
-
-            <pep-textarea [mandatory]="true" [value]="atdDescription" [label]="'Description' | translate" [rowSpan]="2" (valueChange)="atdDescription = $event.value"></pep-textarea>
-        </ng-container>
-        <div pep-dialog-actions class="pep-spacing-element-negative">
-
-                <button mat-button [mat-dialog-close]="null" class="pep-spacing-element pep-button md weak">
-                    {{ 'ACTIONS.CANCEL' | translate }}
-                </button>
-                <button mat-button class="pep-spacing-element pep-button md strong" (click)="closeDialog({'name': atdName, 'description': atdDescription})"
-                >
-                    {{ 'ACTIONS.SAVE' | translate }}
-                </button>
-        </div>
-    </pep-dialog>
-</ng-template> -->
-
+    
+    <pep-table [dataSource]="latestDataArray" [displayedColumns]="displayedColumns"
+        [customizeTable]="customizeDataRowField" (selectedItemsChanged)="selectedRowsChanged($event)"
+        (sortingChanged)="onSortingChanged($event);"></pep-table>
