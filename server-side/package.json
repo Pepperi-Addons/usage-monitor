@@ -20,6 +20,7 @@
         "@rollup/plugin-json": "^4.1.0",
         "@rollup/plugin-node-resolve": "^8.0.0",
         "@types/dotenv": "^8.2.0",
+        "@types/lodash": "^4.14.171",
         "@types/node": "^10.17.24",
         "nodemon": "^2.0.4",
         "rollup": "^2.10.9",
@@ -31,6 +32,7 @@
         "@pepperi-addons/debug-server": "0.0.30",
         "@pepperi-addons/papi-sdk": "^1.24.0",
         "encoding": "^0.1.13",
+        "lodash": "^4.17.21",
         "node-fetch": "^2.6.1"
     }
 }

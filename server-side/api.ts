@@ -2,8 +2,30 @@ import MyService from './my.service'
 import { Client, Request } from '@pepperi-addons/debug-server'
 import { UsageMonitorTable } from './installation'
 import { createPepperiUsage } from './crm-connector'
+import { get } from 'lodash';
 
-export async function get_all_data(client: Client, request: Request) {
+// Returns a list of one key's values per date, no time limit backwards
+// See: DataExample for data object.
+// Example for received key: "Setup.TransactionFields"
+export async function get_all_data_for_key(client: Client, request: Request) {
+    const requestedKey: string = request.query.key;
+
+    // Get all data from table
+    const all_data = await get_all_data_internal(client);
+
+    const one_object = all_data[0];
+    const altered_object = get(one_object, requestedKey);
+
+    // Leave only the requested key and value from each object in array returned from table.
+    const all_data_for_key = all_data.map((obj) => {
+        //return { [requestedKey]: obj[requestedKey]};
+        return { [requestedKey]: obj.Setup.UserDefinedTables}; // add creationdate
+    });
+
+    return all_data_for_key;
+}
+
+async function get_all_data_internal(client: Client) {
     const service = new MyService(client);
     let papiClient = service.papiClient;
 
