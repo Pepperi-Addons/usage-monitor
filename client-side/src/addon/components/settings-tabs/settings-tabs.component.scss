@@ -1,3 +1,16 @@
+@import 'ngx-lib/src/core/style/abstracts/variables';
+.tabs-container {
+    height: inherit;
+    padding-inline: 1rem;
+
+    .mat-tab-group {
+        height: 100%;
+     
+        ::ng-deep.mat-tab-body-wrapper {
+            height: 100%;
+        }
+    }
+}
 // .mat-tab-links {
 //     flex-flow: wrap;
 //   }
@@ -14,38 +27,85 @@
 //     overflow-x: scroll !important;
 // }
 
-div  {
-    .title {
-        line-height: var(--pep-top-bar-field-height,2.5rem)
-    }
-}
-.main-content{
-    .content{
-        margin-top: 0;
-        .pep-tabs{
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            margin: 16px;
-            padding: 16px;
-            border-radius: 8px;
-        }
-    }
+// div  {
+//     .title {
+//         line-height: var(--pep-top-bar-field-height,2.5rem)
+//     }
+// }
 
-    #myFrame{
-        // min-height: calc(100vh + 520px);
-        // overflow-x: hidden;
-        // html {
-        //     overflow-x: hidden !important;
-        //     body {
-        //         overflow-x: hidden !important;
-        //     }
-        // }
 
-    }
-}
+// @mixin pepperi-list-total-component-theme($pepperi-theme) {
+//     .total-items {
+//         color: get-pep-color($pepperi-theme, color-text, color-dimmed);
 
-#myFrame{
-    min-height: calc(100vh - 230px);
-}
+//         .number {
+//             color: get-pep-color($pepperi-theme, color-text, color-main);
+//         }
 
+//     }
+// }
+
+// .total-items-container {
+//     height: $top-bar-height-with-no-top;
+//     display: flex;
+//     align-items: center;
+// }
+
+
+// .left-container{
+//     display: flex;
+//     align-items: center;
+// }
+
+// .main-content{
+//     .content{
+//         margin-top: 0;
+//         .pep-tabs{
+//             display: flex;
+//             align-items: center;
+//             justify-content: center;
+//             margin: 16px;
+//             padding: 16px;
+//             border-radius: 8px;
+//         }
+//     }
+
+//     #myFrame{
+//         // min-height: calc(100vh + 520px);
+//         // overflow-x: hidden;
+//         // html {
+//         //     overflow-x: hidden !important;
+//         //     body {
+//         //         overflow-x: hidden !important;
+//         //     }
+//         // }
+
+//     }
+// }
+
+// #myFrame{
+//     min-height: calc(100vh - 230px);
+// }
+
+
+
+// .plugin-page-container{
+//     .main-content {
+//         .content{
+//             margin-top: 0 !important;
+//         }
+//     }
+// }
+
+// .top-bar-container {
+//     &.inline {
+//         .header-content {
+//             margin-top: 100;
+//             .main-layout {
+//                 .content {
+//                     margin: 100;
+//                 }
+//             }
+//         }
+//     }
+// }

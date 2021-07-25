@@ -30,11 +30,8 @@ export class SettingsTabsComponent implements OnInit {
     @Input() type;
     @Input() subType;
     typesEnum = {
-        'accounts': 'Account',
-        'transactions': 'Orders',
-        'activities': 'Activity',
-        'transaction_lines': 'Lines',
-        'contacts': 'Contact'
+        'data': 'Data',
+        'usage': 'Usage'
     }
     private titleCase = new TitleCasePipe();
 
@@ -55,15 +52,18 @@ export class SettingsTabsComponent implements OnInit {
       this.subType = this.route.snapshot.params.sub_type;
       const addonUUID = this.route.snapshot.params.addon_uuid;
       this.addonBaseURL = this.route.snapshot.queryParams.addon_base_url;
-      this.getTabs(addonUUID).then(res =>{
-           this.tabs = res.sort((x,y) => x.index - y.index);
-           this.activeTab = this.tabs.find((tab,index) => {
-                this.activeTabIndex = index;
-                tab.remoteEntry = this.addonBaseURL ? `${this.addonBaseURL+tab.remoteName}.js` : tab.remoteEntry;
-                return tab.title.toLowerCase() === this.route.snapshot.params['tab_id'];
-            });
-        this.getAtd();
-      });
+      this.tabs = this.getTabs();
+      this.activeTab = this.tabs[0];
+      this.activeTabIndex = 0;
+    //   this.getTabs(addonUUID).then(res =>{
+    //        this.tabs = res.sort((x,y) => x.index - y.index);
+    //        this.activeTab = this.tabs.find((tab,index) => {
+    //             this.activeTabIndex = index;
+    //             tab.remoteEntry = this.addonBaseURL ? `${this.addonBaseURL+tab.remoteName}.js` : tab.remoteEntry;
+    //             return tab.title.toLowerCase() === this.route.snapshot.params['tab_id'];
+    //         });
+    //     this.getAtd();
+    //  });
 
     }
 
@@ -99,41 +99,45 @@ export class SettingsTabsComponent implements OnInit {
     }
 
     tabClick(e){
-        const currentTabKey = this.activeTab?.title;
-        const selectedTab: RemoteModuleOptions = this.activeTab ? this.tabs.find(tab => tab?.title === e?.tab?.textLabel): this.tabs[this.tabs?.length-1];
+        const selectedTab = e?.tab?.textLabel;
+        this.activeTabIndex = e.index;
+        //this.router.navigate([`../${selectedTab.toLowerCase()}`], { relativeTo: this.route});
 
-        if (this.activeTab?.remoteName === 'settings_iframe'){
-            const addonInstance = this.addonProxy?.compRef?.instance;
-            const iframeWindow =  addonInstance?.settingsIframe?.nativeElement?.contentWindow;
-            iframeWindow?.postMessage({msgName: 'tabClick', tabName: selectedTab.title.toLowerCase()}, '*');
-        }
-        if (selectedTab && selectedTab?.title !== currentTabKey){
-            this.cd.detectChanges();
-            if (selectedTab.uuid === this.activeTab.uuid){
-                selectedTab.update = true;
-            }
 
-            if (this.activeTab?.remoteName !== selectedTab?.remoteName){
-                this.activeTab = null;
-                this.cd.detectChanges();
-                this.activeTab = selectedTab;
-            }
-            this.activeTabIndex = e.index;
-            this.router.navigate([`../${selectedTab.title.toLowerCase()}`],
-            { relativeTo: this.route});
-        }
+        // const currentTabKey = this.activeTab?.title;
+        // const selectedTab: RemoteModuleOptions = this.activeTab ? this.tabs.find(tab => tab?.title === e?.tab?.textLabel): this.tabs[this.tabs?.length-1];
+
+        // if (this.activeTab?.remoteName === 'settings_iframe'){
+        //     const addonInstance = this.addonProxy?.compRef?.instance;
+        //     const iframeWindow =  addonInstance?.settingsIframe?.nativeElement?.contentWindow;
+        //     iframeWindow?.postMessage({msgName: 'tabClick', tabName: selectedTab.title.toLowerCase()}, '*');
+        // }
+        // if (selectedTab && selectedTab?.title !== currentTabKey){
+        //     this.cd.detectChanges();
+        //     if (selectedTab.uuid === this.activeTab.uuid){
+        //         selectedTab.update = true;
+        //     }
+
+        //     if (this.activeTab?.remoteName !== selectedTab?.remoteName){
+        //         this.activeTab = null;
+        //         this.cd.detectChanges();
+        //         this.activeTab = selectedTab;
+        //     }
+        //     this.activeTabIndex = e.index;
+        //     this.router.navigate([`../${selectedTab.title.toLowerCase()}`],
+        //     { relativeTo: this.route});
+        //}
     }
 
     goBack(){
         this.router.navigate(['../../'], { relativeTo: this.route  } );
     }
 
-    getTabs(addonUUID, relationName = `${relationTypesEnum[this.type]}TypeListTabs`): Promise<any[]> {
-        const body = { RelationName: relationName };
-        // debug locally
-        // return this.http.postHttpCall('http://localhost:4500/api/relations', body)
-        return this.http.postPapiApiCall(`/addons/api/${addonUUID}/api/relations`, body)
-                    .toPromise();
+    getTabs(): string[] {
+        let ret = [];
+        ret[0] = {title: 'Data', path: 'data'};
+        ret[1] = {title: 'Usage', path: 'usage'};
+        return ret;
     }
 
 
