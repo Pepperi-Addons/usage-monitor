@@ -13,13 +13,12 @@ export async function get_all_data_for_key(client: Client, request: Request) {
     // Get all data from table
     const all_data = await get_all_data_internal(client);
 
-    const one_object = all_data[0];
-    const altered_object = get(one_object, requestedKey);
-
-    // Leave only the requested key and value from each object in array returned from table.
+    // Leave only the creation date and requested key/value from each object in array returned from table.
     const all_data_for_key = all_data.map((obj) => {
-        //return { [requestedKey]: obj[requestedKey]};
-        return { [requestedKey]: obj.Setup.UserDefinedTables}; // add creationdate
+        let date: string = obj?.Key!.toString();
+        return {
+            [date]: get(obj, requestedKey)
+        };
     });
 
     return all_data_for_key;
