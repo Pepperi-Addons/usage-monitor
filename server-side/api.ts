@@ -7,12 +7,20 @@ export async function get_all_data(client: Client, request: Request) {
     const service = new MyService(client);
     let papiClient = service.papiClient;
 
+    // Get all data from table
+    const all_data = await papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorTable.Name).iter().toArray();
+
+    return all_data;
+}
+
+// Returns all data sorted oldest to newest
+export async function get_all_data(client: Client, request: Request) {
     try {
         // Get all data from table
-        var all_data = await papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorTable.Name).iter().toArray();
+        const all_data = await get_all_data_internal(client);
 
         // Sort data from oldest to newest
-        var sorted_all_data = all_data.sort((a, b) => 
+        const sorted_all_data = all_data.sort((a, b) => 
             (a.ModificationDateTime !== undefined && b.ModificationDateTime !== undefined && a.ModificationDateTime > b.ModificationDateTime) ? 1 : -1);
         if (sorted_all_data && sorted_all_data !== undefined)
             return sorted_all_data;
@@ -27,6 +35,7 @@ export async function get_all_data(client: Client, request: Request) {
     }
 }
 
+// Returns newest record
 export async function get_latest_data(client: Client, request: Request) {
     const service = new MyService(client);
     let papiClient = service.papiClient;
@@ -38,7 +47,7 @@ export async function get_latest_data(client: Client, request: Request) {
         //  {order_by:'ModificationDateTime', page_size:1, page:1});
 
         // Get all data from table
-        var all_data = await papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorTable.Name).iter().toArray();
+        const all_data = await get_all_data_internal(client);
 
         // Sort data from newest to oldest in order to return the newest
         var sorted_all_data = all_data.sort((a, b) => 
@@ -56,7 +65,7 @@ export async function get_latest_data(client: Client, request: Request) {
     }
 }
 
-// Function to be run from PNS trigger for every ADAL new record
+// Unused: Function to be run from PNS trigger for every ADAL new record
 export async function triggered_by_pns(client: Client, request: Request) {
     const service = new MyService(client);
     let papiClient = service.papiClient;
@@ -75,6 +84,7 @@ export async function triggered_by_pns(client: Client, request: Request) {
 }
 
 // Function to be run from Pepperi Usage Monitor Addon Code Job
+// Gets the data, inserts to adal table, then to CRM.
 export async function run_collect_data(client: Client, request: Request) {
     const service = new MyService(client);
     let papiClient = service.papiClient;
