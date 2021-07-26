@@ -1,6 +1,6 @@
 {
   "AddonUUID": "00000000-0000-0000-0000-000000005a9e",
-  "AddonVersion": "1.0.19",
+  "AddonVersion": "1.0.20",
   "DebugPort": 4400,
   "WebappBaseUrl": "https://app.sandbox.pepperi.com",
   "DefaultEditor": "main",
@@ -12,20 +12,9 @@
     "main"
   ],
   "Assets": [
-    "de.json",
     "en.json",
     "en.ngx-lib.json",
-    "es.json",
-    "fr.json",
-    "he.json",
-    "hu.json",
-    "it.json",
-    "ja.json",
-    "nl.json",
-    "pl.json",
-    "pt.json",
-    "ru.json",
-    "zh.json"
+    "he.json"
   ],
   "PublishConfig": {
     "ClientStack": "ng10",
@@ -37,8 +26,5 @@
       }
     ],
     "Dependencies": {}
-  },
-  "CPISide": [
-    "addon-cpi.ts"
-  ]
+  }
 }
