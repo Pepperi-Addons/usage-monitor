@@ -5,7 +5,7 @@
 	"main": "index.js",
 	"scripts": {
 		"test": "echo \"Error: no test specified\" && exit 1",
-		"build": "cd ./server-side && npm run build && cd ..",
+		"build": "cd ./client-side && npm run build && cd .. && cd ./server-side && npm run build && cd ..",
 		"init": "cd ./client-side && npm install && cd .. && cd ./server-side && npm install && cd ..",
 		"client:addon": "cd client-side && ng serve --port 4400 --configuration SingleSpa && cd..",
 		"client:standalone": "cd client-side && ng serve --port 4400 --configuration Standalone && cd..",
@@ -16,7 +16,7 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
-		"@pepperi-addons/scripts": "^2.0.4",
+		"@pepperi-addons/scripts": "^1.0.29",
 		"aws-sdk": "^2.940.0",
 		"node-fetch": "^2.6.1"
 	}
