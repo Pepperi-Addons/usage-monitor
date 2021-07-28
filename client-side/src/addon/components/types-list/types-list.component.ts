@@ -114,7 +114,7 @@ export class TypesListComponent implements OnInit {
     }
 
     selectedRowsChanged(selectedRowsCount) {
-            this.showListActions = selectedRowsCount > 0;
+            this.showListActions = false;// selectedRowsCount > 0;
             this.selectedRows = selectedRowsCount;
     }
 
