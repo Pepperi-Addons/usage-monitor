@@ -116,18 +116,14 @@ export async function run_collect_data(client: Client, request: Request) {
         // Run main data collection function
         const res_collect_data = await collect_data(client, request);
 
-        console.log(`Call to collect_data ended, about to add data to table ${UsageMonitorTable.Name}.`);
-
-        // Insert results to ADAL
-        await papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorTable.Name).upsert(res_collect_data);
-
-        console.log("Data added to table successfully, about to send to CRM.");
-
         try {
-            console.log("About to get CRM credentials from AWS Parameter Store...");
+            console.log("Call to collect_data ended, about to get CRM credentials from AWS Parameter Store...");
             let clientSecret = await service.getParameter("CRMClientSecret", true);
-            await createPepperiUsage(clientSecret, res_collect_data);
-            console.log("Data sent to CRM successfully, leaving.");
+            console.log("Got CRM credentials, about to send data to CRM...");
+            const retCRM = await createPepperiUsage(clientSecret, res_collect_data);
+            console.log("Data sent to CRM successfully.");
+
+            res_collect_data.CRMData = retCRM;
         }
         catch (error)
         {
@@ -136,6 +132,13 @@ export async function run_collect_data(client: Client, request: Request) {
                 errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
             }
         }
+
+        console.log(`About to add data to table ${UsageMonitorTable.Name}.`);
+
+        // Insert results to ADAL
+        await papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorTable.Name).upsert(res_collect_data);
+
+        console.log("Data added to table successfully, leaving.");        
 
         return res_collect_data;
     }
@@ -386,6 +389,7 @@ export async function collect_data(client: Client, request: Request) {
         Usage: {},
         Data: {},
         Errors: {},
+        CRMData: {},
         Key: new Date(Date.now()).toISOString(),
         ExpirationDateTime: service.getExpirationDateTime(),
         Year: service.getFullYear(),
