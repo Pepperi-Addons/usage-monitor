@@ -91,7 +91,7 @@ export class PepperiTableComponent implements OnInit, OnChanges {
             ApiName: key,
             Title: this.translate.instant(key),
             XAlignment: 1,
-            FormattedValue: object[key] ? object[key].toString() : '',
+            FormattedValue: object[key] ? this.translate.instant(object[key].toString()) : '',
             Value:  object[key] ? object[key].toString() : '',
             ColumnWidth: 10,
             AdditionalValue: '',

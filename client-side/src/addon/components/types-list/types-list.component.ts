@@ -47,11 +47,11 @@ export class TypesListComponent implements OnInit {
     titlePipe = new TitleCasePipe();
     addonBaseURL = '';
     weekNumber = 0;
-    lastUpdatedDate;
+    lastUpdatedDate: string;
 
 
     constructor(
-        public translate: TranslateService,
+        private translate: TranslateService,
         private http: PepHttpService,
         private dialogService: PepDialogService,
         private session: PepSessionService,
@@ -89,13 +89,15 @@ export class TypesListComponent implements OnInit {
         switch (key) {
             case 'Data':
                 //dataRowField.FormattedValue = object[key]?.UserDefinedTablesLines?.toString();//JSON.stringify(object[key]);
-                dataRowField.FormattedValue = object[key];
+                //dataRowField.FormattedValue = this.translate.instant(object[key]);
+                //dataRowField.FormattedValue = object[key];
                 break;
             case 'Description':
                 dataRowField.ColumnWidth = 65;
+                //dataRowField.FormattedValue = "Description for " + object.Data;
                 break;
             case 'Size':
-                dataRowField.AdditionalValue = object;
+                //dataRowField.AdditionalValue = object;
                 dataRowField.ColumnWidth = 35;
                 break;
             default:
@@ -129,10 +131,13 @@ export class TypesListComponent implements OnInit {
         this.http.getPapiApiCall(encodeURI(url)).subscribe(
             (latest_data_received) => {
                 this.latestData = latest_data_received;
+
+                // Add the 3 parts of the result to a single array
                 let latest_data_array = this.json2array_2(this.latestData.Setup);
                 latest_data_array.push(...this.json2array_2(this.latestData.Data));
                 latest_data_array.push(...this.json2array_2(this.latestData.Usage));
 
+                // Sort array by its 'Data' column
                 latest_data_array.sort((a, b) => (a.Data > b.Data ? 1 : -1));
 
                 this.latestDataArray = latest_data_array;
@@ -148,7 +153,7 @@ export class TypesListComponent implements OnInit {
     }
 
     json2array_2(json){
-        return Object.keys(json).map(key => {const res = {Data:"", Size:0}; res.Data = key; res.Size = json[key]; return res;});
+        return Object.keys(json).map(key => {const res = {Data:"", Description:"", Size:0}; res.Data = key; res.Description = key + "Description"; res.Size = json[key]; return res;});
     }
 
     json2array(json){
@@ -162,9 +167,28 @@ export class TypesListComponent implements OnInit {
     }
 
     onMenuItemClicked(e: IPepMenuItemClickEvent): void{
-        const key = e?.source?.key;
-        //alert(`Menu option ${key} not implemented yet`);
-        this.openDefaultDialog(key, "Not implemented yet");
+        const selectedRows = this.table?.getSelectedItemsData()?.rows;
+        const rowData = this.table?.getItemDataByID(selectedRows[0]);
+        const dataItem = rowData?.Fields[0]?.Value;
+
+        const menuKey = e?.source?.key;
+
+        switch (menuKey)
+        {
+            case "ExportToCSV":
+                this.openDefaultDialog("Not implemented yet", menuKey);
+                break;
+
+            case "Update":
+                var clonedArray = JSON.parse(JSON.stringify(this.latestDataArray));
+                clonedArray[1].Size = 4440;
+                this.latestDataArray = clonedArray;
+                break;
+
+            default:
+                //alert(`Menu option ${key} not implemented yet`);
+                this.openDefaultDialog("Not implemented yet", menuKey + ' ' + dataItem);
+        }
     }
 
     openAddonInDialog(remoteModule: RemoteModuleOptions): void {
