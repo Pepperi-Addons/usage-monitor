@@ -180,6 +180,7 @@ export class TypesListComponent implements OnInit {
                 break;
 
             case "Update":
+                // Should update one datum
                 var clonedArray = JSON.parse(JSON.stringify(this.latestDataArray));
                 clonedArray[1].Size = 4440;
                 this.latestDataArray = clonedArray;
