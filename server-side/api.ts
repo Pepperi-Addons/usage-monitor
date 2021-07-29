@@ -4,26 +4,6 @@ import { UsageMonitorTable } from './installation'
 import { createPepperiUsage } from './crm-connector'
 import { get } from 'lodash';
 
-// Returns a list of one key's values per date, no time limit backwards
-// See: DataExample for data object.
-// Example for received key: "Setup.TransactionFields"
-export async function get_all_data_for_key(client: Client, request: Request) {
-    const requestedKey: string = request.query.key;
-
-    // Get all data from table
-    const all_data = await get_all_data_internal(client);
-
-    // Leave only the creation date and requested key/value from each object in array returned from table.
-    const all_data_for_key = all_data.map((obj) => {
-        let date: string = obj?.Key!.toString();
-        return {
-            [date]: get(obj, requestedKey)
-        };
-    });
-
-    return all_data_for_key;
-}
-
 async function get_all_data_internal(client: Client) {
     const service = new MyService(client);
     let papiClient = service.papiClient;
@@ -34,14 +14,74 @@ async function get_all_data_internal(client: Client) {
     return all_data;
 }
 
-// Returns all data sorted oldest to newest
-export async function get_all_data(client: Client, request: Request) {
+// Returns a list of one key's values per date, no time limit backwards
+// See: DataExample for data object.
+// .../get_all_data_for_key?key=Data.NucleusTransactions
+export async function get_all_data_for_key(client: Client, request: Request) {
     try {
+        const requestedKey: string = request.query.key;
+
         // Get all data from table
         const all_data = await get_all_data_internal(client);
 
         // Sort data from oldest to newest
-        const sorted_all_data = all_data.sort((a, b) => 
+        const sorted_all_data = all_data?.sort((a, b) => 
+            (a.ModificationDateTime !== undefined && b.ModificationDateTime !== undefined && a.ModificationDateTime > b.ModificationDateTime) ? 1 : -1);
+
+        // Leave only the creation date and requested key/value from each object in array returned from table.
+        const all_data_for_key = sorted_all_data?.map((obj) => {
+            let date: string = obj?.Key!.toString();
+            return {
+                [date]: get(obj, requestedKey)
+            };
+        });
+
+        return all_data_for_key;
+    }
+    catch (error)
+    {
+        return {
+            success: false,
+            errorMessage: ('message' in error) ? error.message : 'Unnknown error occurred, see logs.',
+        } 
+    }
+}
+
+// Returns one key's latest value and date
+// See: DataExample for data object.
+// .../get_latest_data_for_key?key=Data.NucleusTransactions
+export async function get_latest_data_for_key(client: Client, request: Request) {
+    try {
+        const requestedKey: string = request.query.key;
+
+        // Get all data from table
+        const latest_data = await get_latest_data(client, request);
+        let date: string;
+        if (latest_data) {
+            date = latest_data?.Key!.toString();
+        
+            return {
+                [date]: get(latest_data, requestedKey)
+            }
+        }
+    }
+    catch (error)
+    {
+        return {
+            success: false,
+            errorMessage: ('message' in error) ? error.message : 'Unnknown error occurred, see logs.',
+        } 
+    }
+}
+
+// Returns all data sorted oldest to newest
+export async function get_all_data(client: Client, request: Request) {
+    try {
+        // Get latest data from table
+        const all_data = await get_all_data_internal(client);
+
+        // Sort data from oldest to newest
+        const sorted_all_data = all_data?.sort((a, b) => 
             (a.ModificationDateTime !== undefined && b.ModificationDateTime !== undefined && a.ModificationDateTime > b.ModificationDateTime) ? 1 : -1);
         if (sorted_all_data && sorted_all_data !== undefined)
             return sorted_all_data;
@@ -71,7 +111,7 @@ export async function get_latest_data(client: Client, request: Request) {
         const all_data = await get_all_data_internal(client);
 
         // Sort data from newest to oldest in order to return the newest
-        var sorted_all_data = all_data.sort((a, b) => 
+        var sorted_all_data = all_data?.sort((a, b) => 
             (a.ModificationDateTime !== undefined && b.ModificationDateTime !== undefined && a.ModificationDateTime < b.ModificationDateTime) ? 1 : -1);
         if (sorted_all_data && sorted_all_data !== undefined && sorted_all_data.length > 0)
             return sorted_all_data[0];
