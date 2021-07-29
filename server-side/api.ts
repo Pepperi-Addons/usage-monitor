@@ -438,7 +438,7 @@ export async function collect_data(client: Client, request: Request) {
         DistributorInternalID: distributorData.InternalID
     };
     result.Setup = {
-        LicensedUsers: null,
+        LicensedUsers: distributorData.MaxEmployees,
         ActualUsers: actualUsersCount, 
         Accounts: accountsCount,
         Items: itemsCount,

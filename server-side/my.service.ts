@@ -56,7 +56,8 @@ class MyService {
             UUID: distributorData.UUID,
             InternalID: distributorData.InternalID,
             Name: distributorData.Name,
-            MachineAndPort: machineData.Machine + ":" + machineData.Port
+            MachineAndPort: machineData.Machine + ":" + machineData.Port,
+            MaxEmployees: distributorData.MaxEmployees
         };
         return distributor;
     }
