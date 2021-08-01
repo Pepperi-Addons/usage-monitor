@@ -1,0 +1,41 @@
+"Setup" (tab header)
+"LicensedUsers"
+"ActualUsers"
+"Accounts"
+"Items"
+"Catalogs"
+"Contacts"
+"Buyers"
+"Profiles"
+"TransactionTypes"
+"ActivityTypes"
+"AccountTypes"
+"TransactionFields"
+"ActivityFields"
+"TransactionLineFields"
+"ItemFields"
+"AccountFields"
+"UserDefinedTables"
+"SecurityGroups"
+
+"Usage" (tab header)
+"WorkingUsers"
+"WorkingBuyers"
+
+"Data" (tab header)
+"NucleusTransactions"
+"NucleusActivities"
+"NucleusTransactionLines"
+"DatabaseAllActivities"
+"Images"
+"UserDefinedTablesLines"
+"Attachments"
+
+"Data" (table header)
+"Description" (table header)
+"Size" (table header)
+
+"Last updated on week" (+datetime)
+"Update" (updates single/all values)
+"More Info" (opens a graph)
+"Data and Usage Report" (title)
