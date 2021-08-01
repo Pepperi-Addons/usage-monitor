@@ -42,7 +42,7 @@ export async function get_all_data_for_key(client: Client, request: Request) {
     {
         return {
             success: false,
-            errorMessage: ('message' in error) ? error.message : 'Unnknown error occurred, see logs.',
+            errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
         } 
     }
 }
@@ -69,7 +69,7 @@ export async function get_latest_data_for_key(client: Client, request: Request) 
     {
         return {
             success: false,
-            errorMessage: ('message' in error) ? error.message : 'Unnknown error occurred, see logs.',
+            errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
         } 
     }
 }
@@ -91,7 +91,7 @@ export async function get_all_data(client: Client, request: Request) {
     catch (error) {
         return {
             success: false,
-            errorMessage: ('message' in error) ? error.message : 'Unnknown error occurred, see logs.',
+            errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
         } 
     }
 }
@@ -121,7 +121,7 @@ export async function get_latest_data(client: Client, request: Request) {
     catch (error) {
         return {
             success: false,
-            errorMessage: ('message' in error) ? error.message : 'Unnknown error occurred, see logs.',
+            errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
         } 
     }
 }
