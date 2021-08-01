@@ -12,6 +12,7 @@ import { MatDialog } from '@angular/material/dialog';
 import { PepListActionsComponent } from '@pepperi-addons/ngx-lib/list';
 import { PapiClient } from '@pepperi-addons/papi-sdk';
 import { IPepButtonClickEvent } from '@pepperi-addons/ngx-lib/button';
+import { Subscription } from 'rxjs';
 
 @Component({
     selector: 'addon-pepperi-list-exmaple',
@@ -26,24 +27,24 @@ export class TypesListComponent implements OnInit {
 
     // List variables
     leftMenuItems: Promise<PepMenuItem[]>;
-    rightMenuItems;
+    rightMenuItems: PepMenuItem[];
     totalRows = 0;
-    displayedColumns;
+    displayedColumns: string[];
     //transactionTypes;
-    latestData;
-    latestDataArray;
+    latestData: { Setup: any; Data: any; Usage: any; };
+    latestDataArray: { Data: string; Description: string; Size: number; Prefix: string; }[];
     searchString = '';
-    searchAutoCompleteValues;
-    addonUUID;
+    searchAutoCompleteValues: any;
+    addonUUID: any;
     showListActions = false;
-    dialogRef;
-    dialogAddon;
+    dialogRef: Subscription;
+    dialogAddon: RemoteModuleOptions;
     viewContainer: ViewContainerRef;
     compRef: ComponentRef<any>;
     selectedRows = 0;
     papi: PapiClient;
-    @Input() type;
-    @Input() subType;
+    @Input() type: any;
+    @Input() subType: any;
     titlePipe = new TitleCasePipe();
     addonBaseURL = '';
     weekNumber = 0;
@@ -91,6 +92,7 @@ export class TypesListComponent implements OnInit {
                 //dataRowField.FormattedValue = object[key]?.UserDefinedTablesLines?.toString();//JSON.stringify(object[key]);
                 //dataRowField.FormattedValue = this.translate.instant(object[key]);
                 //dataRowField.FormattedValue = object[key];
+                dataRowField.AdditionalValue = object.Prefix;
                 break;
             case 'Description':
                 dataRowField.ColumnWidth = 65;
@@ -108,13 +110,13 @@ export class TypesListComponent implements OnInit {
         return dataRowField;
     }
 
-    onSortingChanged(e){
+    onSortingChanged(e: ListSearch){
         e.searchString = '';
         this.loadlist(e);
     }
 
-    selectedRowsChanged(selectedRowsCount) {
-            this.showListActions = false;// selectedRowsCount > 0;
+    selectedRowsChanged(selectedRowsCount: number) {
+            this.showListActions = selectedRowsCount > 0;
             this.selectedRows = selectedRowsCount;
     }
 
@@ -130,34 +132,39 @@ export class TypesListComponent implements OnInit {
         let url = '/addons/api/00000000-0000-0000-0000-000000005A9E/api/' + apiFunc;
         this.http.getPapiApiCall(encodeURI(url)).subscribe(
             (latest_data_received) => {
-                this.latestData = latest_data_received;
+                if (latest_data_received) {
+                    this.latestData = latest_data_received;
 
-                // Add the 3 parts of the result to a single array
-                let latest_data_array = this.json2array_2(this.latestData.Setup);
-                latest_data_array.push(...this.json2array_2(this.latestData.Data));
-                latest_data_array.push(...this.json2array_2(this.latestData.Usage));
+                    // Add the 3 parts of the result to a single array
+                    let latest_data_array = this.json2array_2(this.latestData.Setup, 'Setup');
+                    latest_data_array.push(...this.json2array_2(this.latestData.Data, 'Data'));
+                    latest_data_array.push(...this.json2array_2(this.latestData.Usage, 'Usage'));
 
-                // Sort array by its 'Data' column
-                latest_data_array.sort((a, b) => (a.Data > b.Data ? 1 : -1));
+                    // Sort array by its 'Data' column
+                    latest_data_array.sort((a, b) => (a.Data > b.Data ? 1 : -1));
 
-                this.latestDataArray = latest_data_array;
-                this.displayedColumns = ['Data', 'Description', 'Size'];
-                this.totalRows = latest_data_array.length;
+                    this.latestDataArray = latest_data_array;
+                    this.displayedColumns = ['Data', 'Description', 'Size'];
+                    this.totalRows = latest_data_array.length;
 
-                this.weekNumber = latest_data_received.Week;
-                this.lastUpdatedDate = new Date(latest_data_received.Key).toLocaleString();
+                    this.weekNumber = latest_data_received.Week;
+                    this.lastUpdatedDate = new Date(latest_data_received.Key).toLocaleString();
+                }
             },
             (error) => this.openErrorDialog(error),
             () => {}
         );
     }
 
-    json2array_2(json){
-        return Object.keys(json).map(key => {const res = {Data:"", Description:"", Size:0}; res.Data = key; res.Description = key + "Description"; res.Size = json[key]; return res;});
-    }
-
-    json2array(json){
-        return Object.keys(json).map(key => {const res = {}; res[key] = json[key]; return res;});
+    json2array_2(json, prefix: string){
+        return Object.keys(json).map(key => {
+            const res = {Data:"", Description:"", Size:0, Prefix:""};
+            res.Data = key; 
+            res.Description = key + "Description"; 
+            res.Size = json[key];
+            res.Prefix = prefix;
+            return res;
+        });
     }
 
     async onLeftMenuClicked() {
@@ -180,10 +187,34 @@ export class TypesListComponent implements OnInit {
                 break;
 
             case "Update":
-                // Should update one datum
-                var clonedArray = JSON.parse(JSON.stringify(this.latestDataArray));
-                clonedArray[1].Size = 4440;
-                this.latestDataArray = clonedArray;
+                const prefix = rowData?.Fields[0]?.AdditionalValue;
+                const requestKey = prefix + "." + dataItem;
+                // localhost:
+                //let url = 'http://localhost:4400/api/get_latest_data_for_key?key=' + requestKey;
+                //this.http.getHttpCall(encodeURI(url)).subscribe(
+                // server:
+                let url = '/addons/api/00000000-0000-0000-0000-000000005A9E/api/get_latest_data_for_key?key=' + requestKey;
+                this.http.getPapiApiCall(encodeURI(url)).subscribe(
+                    (latest_data_received) => {
+                        if (latest_data_received) {
+                            // Should return one object with date:value
+                            // Put the received value in the table instead of the current size.
+
+                            // First find the correct entry in the datasource.
+                            const index = this.latestDataArray.findIndex((element) => (element.Data == dataItem && element.Prefix == prefix));
+
+                            // Infer the received value from server
+                            const receivedSize = Object.values(latest_data_received)[0];
+
+                            var clonedArray = JSON.parse(JSON.stringify(this.latestDataArray));
+                            clonedArray[index].Size = receivedSize;
+                            this.latestDataArray = clonedArray;
+                        }
+                    },
+                    (error) => this.openErrorDialog(error),
+                    () => {}
+                );
+
                 break;
 
             default:
@@ -205,13 +236,13 @@ export class TypesListComponent implements OnInit {
         this.dialogService['dialog'].closeAll();
     }
 
-    onAddonChange(e){
+    onAddonChange(e: { closeDialog: any; }){
         if (e.closeDialog){
             this.closeDialog();
         }
     }
 
-    async getMenu(addonUUID): Promise<PepMenuItem[]> {
+    async getMenu(addonUUID: any): Promise<PepMenuItem[]> {
         const apiNames: Array<PepMenuItem> = [];
         //const body = { RelationName: `${relationTypesEnum[this.type]}TypeListMenu`};
         // debug locally
@@ -229,7 +260,7 @@ export class TypesListComponent implements OnInit {
         return apiNames;
     }
 
-    openErrorDialog(error){
+    openErrorDialog(error: { fault: { faultstring: any; }; }){
         const title = this.translate.instant('MESSAGES.TITLE_NOTICE');
         const data = new PepDialogData({
             title,
