@@ -55,7 +55,7 @@ export async function get_latest_data_for_key(client: Client, request: Request) 
         const requestedKey: string = request.query.key;
 
         // Get all data from table
-        const latest_data = await get_latest_data(client, request);
+        const latest_data = await collect_data(client, request);
         let date: string;
         if (latest_data) {
             date = latest_data?.Key!.toString();
