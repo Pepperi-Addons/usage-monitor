@@ -8,18 +8,23 @@
         </pep-top-bar>
     </ng-container>
     <div pep-main-area class="tabs-container">
-        <mat-tab-group
+        <mat-tab-group 
             dynamicHeight #tabGroup
             [selectedIndex]="activeTabIndex"
             (selectedTabChange)="tabClick($event)"
-            animationDuration="0ms" class="fixed-header"
+            animationDuration="100ms" class="fixed-header"
         >
             <mat-tab id="1" label="Data">
-                <addon-pepperi-list-exmaple></addon-pepperi-list-exmaple>
+                <addon-pepperi-list-exmaple [type]="'Data'" [ID]='1' [isActive]="activeTabIndex === 0"></addon-pepperi-list-exmaple>
             </mat-tab>
-            <!-- <mat-tab  id="2" label="Usage">
-                
-            </mat-tab> -->
+            <mat-tab  id="2" label="Usage">
+                <!-- <ng-template matTabContent> -->
+                <addon-pepperi-list-exmaple [type]="'Usage'" [ID]='2' [isActive]="activeTabIndex === 1"></addon-pepperi-list-exmaple>
+            <!-- </ng-template> -->
+            </mat-tab>
+            <mat-tab  id="3" label="Setup">
+                <addon-pepperi-list-exmaple [type]="'Setup'" [ID]='3' [isActive]="activeTabIndex === 2"></addon-pepperi-list-exmaple>
+            </mat-tab>
 
         </mat-tab-group>
     </div>

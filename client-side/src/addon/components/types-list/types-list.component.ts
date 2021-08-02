@@ -43,8 +43,25 @@ export class TypesListComponent implements OnInit {
     compRef: ComponentRef<any>;
     selectedRows = 0;
     papi: PapiClient;
+
+    private listLoaded = false;
     @Input() type: any;
-    @Input() subType: any;
+    @Input() ID: any;
+    
+    private _isActive: boolean = false;
+    @Input() 
+    set isActive(value: boolean) {
+        this._isActive = value;
+
+        if (value && !this.listLoaded) {
+            this.loadlist()
+            this.listLoaded = true;
+        }
+    }
+    get isActive(): boolean {
+        return this._isActive; 
+    }
+
     titlePipe = new TitleCasePipe();
     addonBaseURL = '';
     weekNumber = 0;
@@ -69,12 +86,12 @@ export class TypesListComponent implements OnInit {
 
     async ngOnInit() {
         this.route.params.subscribe( params => {
-            this.type = params.type;
-            this.subType = params.sub_type;
+            //this.type = params.type;
+            //this.subType = params.sub_type;
             const addonUUID = params.addon_uuid;
             this.leftMenuItems = this.getMenu(addonUUID);
             this.rightMenuItems = this.getRightMenu();
-            this.loadlist();
+            //this.loadlist();
         })
 
         this.route.queryParams.subscribe( queryParams => {
@@ -120,7 +137,7 @@ export class TypesListComponent implements OnInit {
             this.selectedRows = selectedRowsCount;
     }
 
-    loadlist(change: ListSearch = { sortBy: 'Name', isAsc: true, searchString: '', type: this.type, subType: this.subType}) {
+    loadlist(change: ListSearch = { sortBy: 'Name', isAsc: true, searchString: ''}) {
         this.initListWithData('get_latest_data'); // Gets data from adal
     }
 
@@ -136,9 +153,10 @@ export class TypesListComponent implements OnInit {
                     this.latestData = latest_data_received;
 
                     // Add the 3 parts of the result to a single array
-                    let latest_data_array = this.json2array_2(this.latestData.Setup, 'Setup');
-                    latest_data_array.push(...this.json2array_2(this.latestData.Data, 'Data'));
-                    latest_data_array.push(...this.json2array_2(this.latestData.Usage, 'Usage'));
+                    let latest_data_array = this.json2array_2(this.latestData, this.type);
+                    //let latest_data_array = this.json2array_2(this.latestData.Setup, 'Setup');
+                    //latest_data_array.push(...this.json2array_2(this.latestData.Data, 'Data'));
+                    //latest_data_array.push(...this.json2array_2(this.latestData.Usage, 'Usage'));
 
                     // Sort array by its 'Data' column
                     latest_data_array.sort((a, b) => (a.Data > b.Data ? 1 : -1));
@@ -157,11 +175,12 @@ export class TypesListComponent implements OnInit {
     }
 
     json2array_2(json, prefix: string){
-        return Object.keys(json).map(key => {
+        let jsonPortion = json[this.type];
+        return Object.keys(jsonPortion).map(key => {
             const res = {Data:"", Description:"", Size:0, Prefix:""};
             res.Data = key; 
             res.Description = key + "Description"; 
-            res.Size = json[key];
+            res.Size = jsonPortion[key];
             res.Prefix = prefix;
             return res;
         });
