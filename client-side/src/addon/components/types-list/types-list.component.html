@@ -15,9 +15,9 @@
                     <pep-icon name="number_plus"></pep-icon>
                 </mat-icon>
             </button> -->
-            <p class="title-md">Last updated on week {{weekNumber}}: {{lastUpdatedDate}}</p>
+            <p class="title-md">{{'Lastupdatedonweekdatetime' | translate}} {{weekNumber}}: {{lastUpdatedDate}}</p>
             <pep-button class="pep-spacing-element"
-                value="Update Now"
+                value="{{'UpdateAllValues' | translate}}"
                 styleType="weak"
                 styleStateType="system"
                 sizeType="sm"
@@ -34,12 +34,11 @@
                 sizeType="sm"
                 classNames=""
                 [disabled]="false"
-                [items]="rightMenuItems"
+                [items]="rightMenuItems | async"
                 (menuItemClick)="onMenuItemClicked($event)"
             ></pep-menu>
         </div>
         <pep-list-actions #listActions *ngIf="showListActions" (menuClick)="onLeftMenuClicked();" (actionClick)="onMenuItemClicked($event)" sizeType="sm" [actions]="leftMenuItems | async"></pep-list-actions>
-        
     </pep-top-bar>
     
     <pep-table [dataSource]="latestDataArray" [displayedColumns]="displayedColumns"

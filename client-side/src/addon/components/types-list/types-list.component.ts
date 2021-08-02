@@ -27,7 +27,7 @@ export class TypesListComponent implements OnInit {
 
     // List variables
     leftMenuItems: Promise<PepMenuItem[]>;
-    rightMenuItems: PepMenuItem[];
+    rightMenuItems: Promise<PepMenuItem[]>;
     totalRows = 0;
     displayedColumns: string[];
     //transactionTypes;
@@ -85,20 +85,21 @@ export class TypesListComponent implements OnInit {
     }
 
     async ngOnInit() {
-        this.route.params.subscribe( params => {
-            //this.type = params.type;
-            //this.subType = params.sub_type;
-            const addonUUID = params.addon_uuid;
-            this.leftMenuItems = this.getMenu(addonUUID);
-            this.rightMenuItems = this.getRightMenu();
-            //this.loadlist();
-        })
+        // this.route.params.subscribe( params => {
+        //     //this.type = params.type;
+        //     //this.subType = params.sub_type;
+        //     //const addonUUID = params.addon_uuid;
+        //     this.leftMenuItems = this.getLeftMenu();
+        //     this.rightMenuItems = this.getRightMenu();
+        //     //this.loadlist(); // Moved to set isActive
+        // })
+        
+        this.leftMenuItems = this.getLeftMenu();
+        this.rightMenuItems = this.getRightMenu();
 
-        this.route.queryParams.subscribe( queryParams => {
+        this.route.queryParams.subscribe(queryParams => {
             this.addonBaseURL = queryParams?.addon_base_url;
-        })
-
-
+        });
     }
 
     // List functions
@@ -196,16 +197,15 @@ export class TypesListComponent implements OnInit {
         const selectedRows = this.table?.getSelectedItemsData()?.rows;
         const rowData = this.table?.getItemDataByID(selectedRows[0]);
         const dataItem = rowData?.Fields[0]?.Value;
-
         const menuKey = e?.source?.key;
-
+        
         switch (menuKey)
         {
             case "ExportToCSV":
                 this.openDefaultDialog("Not implemented yet", menuKey);
                 break;
 
-            case "Update":
+            case "UpdateSingleValue":
                 const prefix = rowData?.Fields[0]?.AdditionalValue;
                 const requestKey = prefix + "." + dataItem;
                 // localhost:
@@ -261,21 +261,25 @@ export class TypesListComponent implements OnInit {
         }
     }
 
-    async getMenu(addonUUID: any): Promise<PepMenuItem[]> {
+    async getLeftMenu(): Promise<PepMenuItem[]> {
         const apiNames: Array<PepMenuItem> = [];
-        //const body = { RelationName: `${relationTypesEnum[this.type]}TypeListMenu`};
-        // debug locally
-        //  const menuEntries = await this.http.postHttpCall('http://localhost:4500/api/relations', body).toPromise().then(tabs => tabs.sort((x,y) => x.index - y.index));
-        //const menuEntries = await this.http.postPapiApiCall(`/addons/api/${addonUUID}/api/relations`, body).toPromise().then(tabs => tabs.sort((x,y) => x.index - y.index));
-        //menuEntries.forEach(menuEntry => apiNames.push(new PepMenuItem({ key: JSON.stringify(menuEntry), text: menuEntry.title})));
-        apiNames.push(new PepMenuItem({ key: "MoreInfo", text: "More Info"}))
-        apiNames.push(new PepMenuItem({ key: "Update", text: "Update"}))
+
+        this.translate.get('MoreInfoOpensGraph').subscribe((txt: string) => { 
+            apiNames.push(new PepMenuItem({key: "MoreInfoOpensGraph", text: txt}))
+        });
+
+        this.translate.get('UpdateSingleValue').subscribe((txt: string) => { 
+            apiNames.push(new PepMenuItem({key: "UpdateSingleValue", text: txt}));
+        });
+
         return apiNames;
     }
 
-    getRightMenu() : PepMenuItem[] {
+    async getRightMenu() : Promise<PepMenuItem[]> {
         const apiNames: Array<PepMenuItem> = [];
-        apiNames.push(new PepMenuItem({ key: "ExportToCSV", text: "Export to CSV"}));
+        this.translate.get('ExportToCSV').subscribe((txt: string) => { 
+            apiNames.push(new PepMenuItem({key: "ExportToCSV", text: txt}));
+        });
         return apiNames;
     }
 

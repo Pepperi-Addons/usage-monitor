@@ -1,6 +1,6 @@
 <pep-page-layout>
     <ng-container pep-top-area >
-        <pep-top-bar [title]="('Data and Usage Report' | translate)">
+        <pep-top-bar [title]="('DataAndUsageReportTitle' | translate)">
             <div header-start-content>
             </div>
             <div header-end-content>
@@ -14,15 +14,13 @@
             (selectedTabChange)="tabClick($event)"
             animationDuration="100ms" class="fixed-header"
         >
-            <mat-tab id="1" label="Data">
+            <mat-tab id="1" label="{{'DataTabHeader' | translate}}">
                 <addon-pepperi-list-exmaple [type]="'Data'" [ID]='1' [isActive]="activeTabIndex === 0"></addon-pepperi-list-exmaple>
             </mat-tab>
-            <mat-tab  id="2" label="Usage">
-                <!-- <ng-template matTabContent> -->
+            <mat-tab  id="2" label="{{'UsageTabHeader' | translate}}">
                 <addon-pepperi-list-exmaple [type]="'Usage'" [ID]='2' [isActive]="activeTabIndex === 1"></addon-pepperi-list-exmaple>
-            <!-- </ng-template> -->
             </mat-tab>
-            <mat-tab  id="3" label="Setup">
+            <mat-tab  id="3" label="{{'SetupTabHeader' | translate}}">
                 <addon-pepperi-list-exmaple [type]="'Setup'" [ID]='3' [isActive]="activeTabIndex === 2"></addon-pepperi-list-exmaple>
             </mat-tab>
 
