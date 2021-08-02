@@ -1,64 +1,68 @@
-"UsageMonitor_SetupTabHeader":"Setup"
-"UsageMonitor_LicensedUsers":"Licensed Users"
-"UsageMonitor_LicensedUsersDescription":"Max number of users allocated a license"
-"UsageMonitor_ActualUsers":"Actual Users"
-"UsageMonitor_ActualUsersDescription":"Current active users"
-"UsageMonitor_Accounts":"Accounts"
-"UsageMonitor_AccountsDescription":"Accounts Description"
-"UsageMonitor_Items":"Items"
-"UsageMonitor_ItemsDescription":"Number of Items"
-"UsageMonitor_Catalogs":"Catalogs"
-"UsageMonitor_CatalogsDescription":"Number of Catalogs"
-"UsageMonitor_Contacts":"Contacts"
-"UsageMonitor_ContactsDescription":"Number of Contacts"
-"UsageMonitor_Buyers":"Buyers"
-"UsageMonitor_BuyersDescription":"Number of  Contacts that were given access to B2B eCommerce"
-"UsageMonitor_Profiles":"Profiles"
-"UsageMonitor_ProfilesDescription":"Profiles Description"
-"UsageMonitor_TransactionTypes":"Transaction Types"
-"UsageMonitor_TransactionTypesDescription":"Number of Transaction Types (Sales Order, Return, Quote,etc.)"
-"UsageMonitor_ActivityTypes":"Activity Types"
-"UsageMonitor_ActivityTypesDescription":"Number of Activity Types (Visit, Photo, Survey, etc.)"
-"UsageMonitor_AccountTypes":"Account Types"
-"UsageMonitor_AccountTypesDescription":"Number of Account Types (Customers, Leads, etc.)"
-"UsageMonitor_TransactionFields":"Transaction Fields"
-"UsageMonitor_TransactionFieldsDescription":"Number of Transactions Custom Fields"
-"UsageMonitor_ActivityFields":"Activity Fields"
-"UsageMonitor_ActivityFieldsDescription":"Number of Activity Custom Fields"
-"UsageMonitor_TransactionLineFields":"Transaction Line Fields"
-"UsageMonitor_TransactionLineFieldsDescription":"Number of Transaction Lines Custom Fields"
-"UsageMonitor_ItemFields":"Item Fields"
-"UsageMonitor_ItemFieldsDescription":"Number of Items Custom Fields"
-"UsageMonitor_AccountFields":"Account Fields"
-"UsageMonitor_AccountFieldsDescription":"Number of Accounts Custom Fields"
-"UsageMonitor_UserDefinedTables":"User Defined Tables"
-"UsageMonitor_UserDefinedTablesDescription":"Number of User Defined Tables (UDTs)"
-"UsageMonitor_SecurityGroups":"Security Groups"
-"UsageMonitor_SecurityGroupsDescription":"Number of Security Groups"
-"UsageMonitor_UsageTabHeader":"Usage"
-"UsageMonitor_WorkingUsers":"Working Users"
-"UsageMonitor_WorkingUsersDescription":"Users with at least 1 new Activity or Transaction in the last 30 days"
-"UsageMonitor_WorkingBuyers":"Working Buyers"
-"UsageMonitor_WorkingBuyersDescription":"Buyers with at least 1 new Activity or Transaction in the last 30 days"
-"UsageMonitor_DataTabHeader":"Data"
-"UsageMonitor_NucleusTransactions":"Nucleus Transactions"
-"UsageMonitor_NucleusTransactionsDescription":"Number of Transactions in memory"
-"UsageMonitor_NucleusActivities":"Nucleus Activities"
-"UsageMonitor_NucleusActivitiesDescription":"Number of Activities in memory"
-"UsageMonitor_NucleusTransactionLines":"Nucleus Transaction Lines"
-"UsageMonitor_NucleusTransactionLinesDescription":"Number of Transaction Lines in memory"
-"UsageMonitor_DatabaseAllActivities":"Database All Activities"
-"UsageMonitor_DatabaseAllActivitiesDescription":"Total number of Transactions and Activities stored in database"
-"UsageMonitor_Images":"Images"
-"UsageMonitor_ImagesDescription":"Total images (including multiple images per item)"
-"UsageMonitor_UserDefinedTablesLines":"User Defined Tables Lines"
-"UsageMonitor_UserDefinedTablesLinesDescription":"Total number of lines in UDTs"
-"UsageMonitor_Attachments":"Attachments"
-"UsageMonitor_AttachmentsDescription":"Total number of attachments such as files or videos (not including images)"
-"UsageMonitor_DataTableHeader":"Data"
-"UsageMonitor_DescriptionTableHeader":"Description"
-"UsageMonitor_SizeTableHeader":"Size"
-"UsageMonitor_Lastupdatedonweekdatetime":"Last updated on week (+datetime)"
-"UsageMonitor_UpdateSingleAllValues":"Update (updates single/all values)"
-"UsageMonitor_MoreInfoOpensGraph":"More Info"
-"UsageMonitor_DataAndUsageReportTitle":"Data and Usage Report"
+{
+    "SetupTabHeader":"Setup",
+    "LicensedUsers":"Licensed Users",
+    "LicensedUsersDescription":"Max number of users allocated a license",
+    "ActualUsers":"Actual Users",
+    "ActualUsersDescription":"Current active users",
+    "Accounts":"Accounts",
+    "AccountsDescription":"Accounts Description",
+    "Items":"Items",
+    "ItemsDescription":"Number of Items",
+    "Catalogs":"Catalogs",
+    "CatalogsDescription":"Number of Catalogs",
+    "Contacts":"Contacts",
+    "ContactsDescription":"Number of Contacts",
+    "Buyers":"Buyers",
+    "BuyersDescription":"Number of  Contacts that were given access to B2B eCommerce",
+    "Profiles":"Profiles",
+    "ProfilesDescription":"Profiles Description",
+    "TransactionTypes":"Transaction Types",
+    "TransactionTypesDescription":"Number of Transaction Types (Sales Order, Return, Quote,etc.)",
+    "ActivityTypes":"Activity Types",
+    "ActivityTypesDescription":"Number of Activity Types (Visit, Photo, Survey, etc.)",
+    "AccountTypes":"Account Types",
+    "AccountTypesDescription":"Number of Account Types (Customers, Leads, etc.)",
+    "TransactionFields":"Transaction Fields",
+    "TransactionFieldsDescription":"Number of Transactions Custom Fields",
+    "ActivityFields":"Activity Fields",
+    "ActivityFieldsDescription":"Number of Activity Custom Fields",
+    "TransactionLineFields":"Transaction Line Fields",
+    "TransactionLineFieldsDescription":"Number of Transaction Lines Custom Fields",
+    "ItemFields":"Item Fields",
+    "ItemFieldsDescription":"Number of Items Custom Fields",
+    "AccountFields":"Account Fields",
+    "AccountFieldsDescription":"Number of Accounts Custom Fields",
+    "UserDefinedTables":"User Defined Tables",
+    "UserDefinedTablesDescription":"Number of User Defined Tables (UDTs)",
+    "SecurityGroups":"Security Groups",
+    "SecurityGroupsDescription":"Number of Security Groups",
+    "UsageTabHeader":"Usage",
+    "WorkingUsers":"Working Users",
+    "WorkingUsersDescription":"Users with at least 1 new Activity or Transaction in the last 30 days",
+    "WorkingBuyers":"Working Buyers",
+    "WorkingBuyersDescription":"Buyers with at least 1 new Activity or Transaction in the last 30 days",
+    "DataTabHeader":"Data",
+    "NucleusTransactions":"Nucleus Transactions",
+    "NucleusTransactionsDescription":"Number of Transactions in memory",
+    "NucleusActivities":"Nucleus Activities",
+    "NucleusActivitiesDescription":"Number of Activities in memory",
+    "NucleusTransactionLines":"Nucleus Transaction Lines",
+    "NucleusTransactionLinesDescription":"Number of Transaction Lines in memory",
+    "DatabaseAllActivities":"Database All Activities",
+    "DatabaseAllActivitiesDescription":"Total number of Transactions and Activities stored in database",
+    "Images":"Images",
+    "ImagesDescription":"Total images (including multiple images per item)",
+    "UserDefinedTablesLines":"User Defined Tables Lines",
+    "UserDefinedTablesLinesDescription":"Total number of lines in UDTs",
+    "Attachments":"Attachments",
+    "AttachmentsDescription":"Total number of attachments such as files or videos (not including images)",
+    "DataTableHeader":"Data",
+    "DescriptionTableHeader":"Description",
+    "SizeTableHeader":"Size",
+    "Lastupdatedonweekdatetime":"Last updated on week ",
+    "UpdateSingleValue":"Update",
+    "UpdateAllValues":"Update Now",
+    "MoreInfoOpensGraph":"More Info",
+    "DataAndUsageReportTitle":"Data and Usage Report",
+    "ExportToCSV": "Export to CSV"
+}

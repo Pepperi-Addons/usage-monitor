@@ -1,68 +1,68 @@
-"Setup" (tab header)
-"LicensedUsers"
-"LicensedUsersDescription"
-"ActualUsers"
-"ActualUsersDescription"
-"Accounts"
-"AccountsDescription"
-"Items"
-"ItemsDescription"
-"Catalogs"
-"CatalogsDescription"
-"Contacts"
-"ContactsDescription"
-"Buyers"
-"BuyersDescription"
-"Profiles"
-"ProfilesDescription"
-"TransactionTypes"
-"TransactionTypesDescription"
-"ActivityTypes"
-"ActivityTypesDescription"
-"AccountTypes"
-"AccountTypesDescription"
-"TransactionFields"
-"TransactionFieldsDescription"
-"ActivityFields"
-"ActivityFieldsDescription"
-"TransactionLineFields"
-"TransactionLineFieldsDescription"
-"ItemFields"
-"ItemFieldsDescription"
-"AccountFields"
-"AccountFieldsDescription"
-"UserDefinedTables"
-"UserDefinedTablesDescription"
-"SecurityGroups"
-"SecurityGroupsDescription"
-
-"Usage" (tab header)
-"WorkingUsers"
-"WorkingUsersDescription"
-"WorkingBuyers"
-"WorkingBuyersDescription"
-
-"Data" (tab header)
-"NucleusTransactions"
-"NucleusTransactionsDescription"
-"NucleusActivities"
-"NucleusActivitiesDescription"
-"NucleusTransactionLines"
-"NucleusTransactionLinesDescription"
-"DatabaseAllActivities"
-"DatabaseAllActivitiesDescription"
-"Images"
-"ImagesDescription"
-"UserDefinedTablesLines"
-"UserDefinedTablesLinesDescription"
-"Attachments"
-"AttachmentsDescription"
-
-"Data" (table header)
-"Description" (table header)
-"Size" (table header)
-
-"Last updated on week" (+datetime)
-"Update" (updates single/all values)
-"More Info" (opens a graph)
-"Data and Usage Report" (title)
+{
+    "SetupTabHeader":"Setup",
+    "LicensedUsers":"Licensed Users",
+    "LicensedUsersDescription":"Max number of users allocated a license",
+    "ActualUsers":"Actual Users",
+    "ActualUsersDescription":"Current active users",
+    "Accounts":"Accounts",
+    "AccountsDescription":"Accounts Description",
+    "Items":"Items",
+    "ItemsDescription":"Number of Items",
+    "Catalogs":"Catalogs",
+    "CatalogsDescription":"Number of Catalogs",
+    "Contacts":"Contacts",
+    "ContactsDescription":"Number of Contacts",
+    "Buyers":"Buyers",
+    "BuyersDescription":"Number of  Contacts that were given access to B2B eCommerce",
+    "Profiles":"Profiles",
+    "ProfilesDescription":"Profiles Description",
+    "TransactionTypes":"Transaction Types",
+    "TransactionTypesDescription":"Number of Transaction Types (Sales Order, Return, Quote,etc.)",
+    "ActivityTypes":"Activity Types",
+    "ActivityTypesDescription":"Number of Activity Types (Visit, Photo, Survey, etc.)",
+    "AccountTypes":"Account Types",
+    "AccountTypesDescription":"Number of Account Types (Customers, Leads, etc.)",
+    "TransactionFields":"Transaction Fields",
+    "TransactionFieldsDescription":"Number of Transactions Custom Fields",
+    "ActivityFields":"Activity Fields",
+    "ActivityFieldsDescription":"Number of Activity Custom Fields",
+    "TransactionLineFields":"Transaction Line Fields",
+    "TransactionLineFieldsDescription":"Number of Transaction Lines Custom Fields",
+    "ItemFields":"Item Fields",
+    "ItemFieldsDescription":"Number of Items Custom Fields",
+    "AccountFields":"Account Fields",
+    "AccountFieldsDescription":"Number of Accounts Custom Fields",
+    "UserDefinedTables":"User Defined Tables",
+    "UserDefinedTablesDescription":"Number of User Defined Tables (UDTs)",
+    "SecurityGroups":"Security Groups",
+    "SecurityGroupsDescription":"Number of Security Groups",
+    "UsageTabHeader":"Usage",
+    "WorkingUsers":"Working Users",
+    "WorkingUsersDescription":"Users with at least 1 new Activity or Transaction in the last 30 days",
+    "WorkingBuyers":"Working Buyers",
+    "WorkingBuyersDescription":"Buyers with at least 1 new Activity or Transaction in the last 30 days",
+    "DataTabHeader":"Data",
+    "NucleusTransactions":"Nucleus Transactions",
+    "NucleusTransactionsDescription":"Number of Transactions in memory",
+    "NucleusActivities":"Nucleus Activities",
+    "NucleusActivitiesDescription":"Number of Activities in memory",
+    "NucleusTransactionLines":"Nucleus Transaction Lines",
+    "NucleusTransactionLinesDescription":"Number of Transaction Lines in memory",
+    "DatabaseAllActivities":"Database All Activities",
+    "DatabaseAllActivitiesDescription":"Total number of Transactions and Activities stored in database",
+    "Images":"Images",
+    "ImagesDescription":"Total images (including multiple images per item)",
+    "UserDefinedTablesLines":"User Defined Tables Lines",
+    "UserDefinedTablesLinesDescription":"Total number of lines in UDTs",
+    "Attachments":"Attachments",
+    "AttachmentsDescription":"Total number of attachments such as files or videos (not including images)",
+    "DataTableHeader":"Data",
+    "DescriptionTableHeader":"Description",
+    "SizeTableHeader":"Size",
+    "Lastupdatedonweekdatetime":"Last updated on week ",
+    "UpdateSingleValue":"Update",
+    "UpdateAllValues":"Update Now",
+    "MoreInfoOpensGraph":"More Info",
+    "DataAndUsageReportTitle":"Data and Usage Report",
+    "ExportToCSV": "Export to CSV"
+}
