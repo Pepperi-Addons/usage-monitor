@@ -201,22 +201,29 @@ export async function collect_data(client: Client, request: Request) {
 
     //console.log(service.functionName());
     
-    const usersTask = papiClient.users.count({include_deleted:false});
-    const accountsTask = papiClient.accounts.count({include_deleted:false});
-    const itemsTask = papiClient.items.count({include_deleted:false});
-    const catalogsTask = papiClient.catalogs.count({include_deleted:false});
-    const contactsTask = papiClient.contacts.count({include_deleted:false});
-    const buyersObjectsTask = papiClient.contacts.iter({include_deleted:false, where:'IsBuyer=true', fields:['InternalID']}).toArray();
-    const profilesTask = papiClient.profiles.count({include_deleted:false});
-    const transactionTypesTask = papiClient.metaData.type('transactions').types.get();
-    const activityTypesTask = papiClient.metaData.type('activities').types.get();
-    const accountTypesTask = papiClient.metaData.type('accounts').types.get();
-    const transactionFieldsTask = papiClient.metaData.type('transactions').fields.get();
-    const activityFieldsTask = papiClient.metaData.type('activities').fields.get();
-    const transactionLineFieldsTask = papiClient.metaData.type('transaction_lines').fields.get();
-    const itemFieldsTask = papiClient.metaData.type('items').fields.get();
-    const accountFieldsTask = papiClient.metaData.type('accounts').fields.get();
-    const userDefinedTablesTask = papiClient.metaData.userDefinedTables.iter({include_deleted:false}).toArray();
+    let actualUsersCount: any = null;
+    let accountsCount: any = null;
+    let itemsCount: any = null;
+    let catalogsCount: any = null;
+    let contactsCount: any = null;
+    let buyersObjects: any[] = [];
+    let buyersCount: any = null;
+    let profilesCount: any = null;
+    let transactionTypesCount: any = null;
+    let activityTypesCount: any = null;
+    let accountTypesCount: any = null;
+    let transactionFieldsCount: any = null;
+    let activityFieldsCount: any = null;
+    let transactionLineFieldsCount: any = null;
+    let itemFieldsCount: any = null;
+    let accountFieldsCount: any = null;
+    let userDefinedTablesCount: any = null;
+    let transactionsCount: any = null;
+    let activitiesCount: any = null;
+    let transactionLinesCount: any = null;
+    let imagesCount: any = null;
+    let userDefinedTablesLinesCount: any = null;
+    let distributorData: any = null;
 
     // Working users/buyers created at least one new activity in all_activities in the last month.
     let lastMonth = new Date(Date.now());
@@ -227,201 +234,103 @@ export async function collect_data(client: Client, request: Request) {
     // See: https://pepperi.atlassian.net/browse/DI-18019
     const lastMonthStringWithoutTime = lastMonthString.split('T')[0] + 'Z';
     const allActivitiesUsersAndBuyersTask = papiClient.allActivities.count({where:"CreationDateTime>'" + lastMonthStringWithoutTime + "'", group_by:"CreatorInternalID"});
-
-    const transactionsTask = papiClient.transactions.count({include_deleted:false});
-    const activitiesTask = papiClient.activities.count({include_deleted:false});
-    const transactionLinesTask = papiClient.transactionLines.count({include_deleted:false});
-    const imagesTask = papiClient.images.count({where:'ImageType=1'});
-    const userDefinedTablesLinesTask = papiClient.userDefinedTables.count({include_deleted:false});
-
-    const distributorTask = service.GetDistributor(papiClient);
-
-    // Await all regular tasks
-    let actualUsersCount: any = null;
-    try {
-        actualUsersCount = await usersTask;
-    }
-    catch (error) {
-        errors.push({object:'ActualUsers', error:('message' in error) ? error.message : 'general error'});
-    }
-
-    let accountsCount: any = null;
-    try {
-        accountsCount = await accountsTask;
-    } catch (error) {
-        errors.push({object:'Accounts', error:('message' in error) ? error.message : 'general error'});
-    }
-
-    let itemsCount: any = null;
-    try {
-        itemsCount = await itemsTask;
-    } catch (error) {
-        errors.push({object:'Items', error:('message' in error) ? error.message : 'general error'});
-    }
-
-    let catalogsCount: any = null;
-    try {
-        catalogsCount = await catalogsTask;
-    } catch (error) {
-        errors.push({object:'Catalogs', error:('message' in error) ? error.message : 'general error'});
-    }
     
-    let contactsCount: any = null;
-    try {
-        contactsCount = await contactsTask;
-    } catch (error) {
-        errors.push({object:'Contacts', error:('message' in error) ? error.message : 'general error'});
-    }
+    let workingUsers = 0;
+    let workingBuyers = 0;
 
-    let buyersObjects: any[] = [];
-    let buyersCount: any = null;
-    try {
-        buyersObjects = await buyersObjectsTask;
-        buyersCount = buyersObjects.length;
-    } catch (error) {
-        errors.push({object:'Buyers', error:('message' in error) ? error.message : 'general error'});
-    }
-    
-    let profilesCount: any = null;
-    try {
-        profilesCount = await profilesTask;
-    } catch (error) {
-        errors.push({object:'Profiles', error:('message' in error) ? error.message : 'general error'});
-    }
+    await Promise.all([
+        papiClient.users.count({include_deleted:false})
+            .then(x => actualUsersCount = x)
+            .catch(error => errors.push({object:'ActualUsers', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.users.count({include_deleted:false})
+            .then(x => actualUsersCount = x)
+            .catch(error => errors.push({object:'ActualUsers', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.accounts.count({include_deleted:false})
+            .then(x => accountsCount = x)
+            .catch(error => errors.push({object:'Accounts', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.items.count({include_deleted:false})
+            .then(x => itemsCount = x)
+            .catch(error => errors.push({object:'Items', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.catalogs.count({include_deleted:false})
+            .then(x => catalogsCount = x)
+            .catch(error => errors.push({object:'Catalogs', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.contacts.count({include_deleted:false})
+            .then(x => contactsCount = x)
+            .catch(error => errors.push({object:'Contacts', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.profiles.count({include_deleted:false})
+            .then(x => profilesCount = x)
+            .catch(error => errors.push({object:'Profiles', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.metaData.type('transactions').types.get()
+            .then(x => transactionTypesCount = x.length)
+            .catch(error => errors.push({object:'TransactionTypes', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.metaData.type('activities').types.get()
+            .then(x => activityTypesCount = x.length)
+            .catch(error => errors.push({object:'ActivityTypes', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.metaData.type('accounts').types.get()
+            .then(x => accountTypesCount = x.length)
+            .catch(error => errors.push({object:'AccountTypes', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.metaData.type('transactions').fields.get()
+            .then(x => transactionFieldsCount = x.length)
+            .catch(error => errors.push({object:'TransactionFields', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.metaData.type('activities').fields.get()
+            .then(x => activityFieldsCount = x.length)
+            .catch(error => errors.push({object:'ActivityFields', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.metaData.type('transaction_lines').fields.get()
+            .then(x => transactionLineFieldsCount = x.length)
+            .catch(error => errors.push({object:'TransactionLinesFields', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.metaData.type('items').fields.get()
+            .then(x => itemFieldsCount = x.length)
+            .catch(error => errors.push({object:'ItemFields', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.metaData.type('accounts').fields.get()
+            .then(x => accountFieldsCount = x.length)
+            .catch(error => errors.push({object:'AccountFields', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.metaData.userDefinedTables.iter({include_deleted:false}).toArray()
+            .then(x => userDefinedTablesCount = x.length)
+            .catch(error => errors.push({object:'UserDefinedTables', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.transactions.count({include_deleted:false})
+            .then(x => transactionsCount = x)
+            .catch(error => errors.push({object:'Transactions', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.activities.count({include_deleted:false})
+            .then(x => activitiesCount = x)
+            .catch(error => errors.push({object:'Activities', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.transactionLines.count({include_deleted:false})
+            .then(x => transactionLinesCount = x)
+            .catch(error => errors.push({object:'TransactionLines', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.images.count({where:'ImageType=1'})
+            .then(x => imagesCount = x)
+            .catch(error => errors.push({object:'Images', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.userDefinedTables.count({include_deleted:false})
+            .then(x => userDefinedTablesLinesCount = x)
+            .catch(error => errors.push({object:'UserDefinedTablesLines', error:('message' in error) ? error.message : 'general error'})),
+        service.GetDistributor(papiClient)
+            .then(x => distributorData = x)
+            .catch(error => errors.push({object:'DistributorData', error:('message' in error) ? error.message : 'general error'})),
+        papiClient.contacts.iter({include_deleted:false, where:'IsBuyer=true', fields:['InternalID']}).toArray()
+            .then(async x => {
+                buyersObjects = x; 
+                buyersCount = x.length;
 
-    let transactionTypesCount: any = null;
-    try {
-        transactionTypesCount = (await transactionTypesTask).length;
-    } catch (error) {
-        errors.push({object:'TransactionTypes', error:('message' in error) ? error.message : 'general error'});
-    }
+                // Iterate all working users and buyers, get which ones are buyers (the rest are users).
+                try {
 
-    let activityTypesCount: any = null;
-    try {
-        activityTypesCount = (await activityTypesTask).length;
-    } catch (error) {
-        errors.push({object:'ActivityTypes', error:('message' in error) ? error.message : 'general error'});
-    }
-    
-    let accountTypesCount: any = null;
-    try {
-        accountTypesCount = (await accountTypesTask).length;
-    } catch (error) {
-        errors.push({object:'AccountTypes', error:('message' in error) ? error.message : 'general error'});
-    }
+                    // The following code dependes on both allActivitiesUsersAndBuyersTask and buyers tasks:
+                    const allActivitiesUsersAndBuyers = await allActivitiesUsersAndBuyersTask;
 
-    let transactionFieldsCount: any = null;
-    try {
-        transactionFieldsCount = (await transactionFieldsTask).length;
-    } catch (error) {
-        errors.push({object:'TransactionFields', error:('message' in error) ? error.message : 'general error'});
-    }
+                    // Iterate buyersObject, see which ones appear in allActivitiesUsersAndBuyers to get the number of working buyers (the rest are working users).
+                    buyersObjects.forEach(buyerObject => {
+                        const buyerInternalID = buyerObject['InternalID'] as number;
+                        allActivitiesUsersAndBuyers[buyerInternalID] && allActivitiesUsersAndBuyers[buyerInternalID] > 0 ? workingBuyers++ : null;
+                    });
 
-    let activityFieldsCount: any = null;
-    try {
-        activityFieldsCount = (await activityFieldsTask).length;
-    } 
-    catch (error) {
-        errors.push({object:'ActivityFields', error:('message' in error) ? error.message : 'general error'});
-    }
+                    workingUsers = Object.keys(allActivitiesUsersAndBuyers).length - workingBuyers;
+                }
+                catch (error) {
+                    errors.push({object:'WorkingUsers', error:('message' in error) ? error.message : 'general error'});
+                }
+            })
+            .catch(error => errors.push({object:'Buyers', error:('message' in error) ? error.message : 'general error'}))
 
-    let transactionLineFieldsCount: any = null;
-    try {
-        transactionLineFieldsCount = (await transactionLineFieldsTask).length;
-    } 
-    catch (error) {
-        errors.push({object:'TransactionLinesFields', error:('message' in error) ? error.message : 'general error'});
-    }
-
-    let itemFieldsCount: any = null;
-    try {
-        itemFieldsCount = (await itemFieldsTask).length;
-    } 
-    catch (error) {
-        errors.push({object:'ItemFields', error:('message' in error) ? error.message : 'general error'});
-    }
-
-    let accountFieldsCount: any = null;
-    try {
-        accountFieldsCount = (await accountFieldsTask).length;
-    } 
-    catch (error) {
-        errors.push({object:'AccountFields', error:('message' in error) ? error.message : 'general error'});
-    }
-
-    let userDefinedTablesCount: any = null;
-    try {
-        userDefinedTablesCount = (await userDefinedTablesTask).length;
-    } 
-    catch (error) {
-        errors.push({object:'UserDefinedTables', error:('message' in error) ? error.message : 'general error'});
-    }
-    
-    var workingUsers = 0;
-    var workingBuyers = 0;
-    // Iterate all working users and buyers, get which ones are buyers (the rest are users).
-    try {
-        const allActivitiesUsersAndBuyers = await allActivitiesUsersAndBuyersTask;
-
-        // Iterate buyersObject, see which ones appear in allActivitiesUsersAndBuyers to get the number of working buyers (the rest are working users).
-        buyersObjects.forEach(buyerObject => {
-            const buyerInternalID = buyerObject['InternalID'] as number;
-            allActivitiesUsersAndBuyers[buyerInternalID] && allActivitiesUsersAndBuyers[buyerInternalID] > 0 ? workingBuyers++ : null;
-        });
-
-        workingUsers = Object.keys(allActivitiesUsersAndBuyers).length - workingBuyers;
-    }
-    catch (error) {
-        errors.push({object:'WorkingUsers', error:('message' in error) ? error.message : 'general error'});
-    }
-
-    let transactionsCount: any = null;
-    try {
-        transactionsCount = await transactionsTask;
-    }
-    catch (error) {
-        errors.push({object:'Transactions', error:('message' in error) ? error.message : 'general error'});
-    }
-    
-    let activitiesCount: any = null;
-    try {
-        activitiesCount = await activitiesTask;
-    }
-    catch (error) {
-        errors.push({object:'Activities', error:('message' in error) ? error.message : 'general error'});
-    }
-
-    let transactionLinesCount: any = null;
-    try {
-        transactionLinesCount = await transactionLinesTask;
-    }
-    catch (error) {
-        errors.push({object:'TransactionLines', error:('message' in error) ? error.message : 'general error'});
-    }
-
-    let imagesCount: any = null;
-    try {
-        imagesCount = await imagesTask;
-    }
-    catch (error) {
-        errors.push({object:'Images', error:('message' in error) ? error.message : 'general error'});
-    }
-
-    let userDefinedTablesLinesCount: any = null;
-    try {
-        userDefinedTablesLinesCount = await userDefinedTablesLinesTask;
-    } 
-    catch (error) {
-        errors.push({object:'UserDefinedTablesLines', error:('message' in error) ? error.message : 'general error'});
-    }
-
-    let distributorData: any = null;
-    try {
-        distributorData = (await distributorTask);
-    } 
-    catch (error) {
-        errors.push({object:'distributorData', error:('message' in error) ? error.message : 'general error'});
-    }
+    ] as Promise<any>[])
 
     // Result object construction
     const result = {
