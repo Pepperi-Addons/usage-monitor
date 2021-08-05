@@ -28,15 +28,15 @@
                 [visible]="true"
                 (buttonClick)="refreshButtonClicked($event)">
             </pep-button>
-            <pep-menu class="pep-spacing-element"
+            <!-- <pep-menu class="pep-spacing-element"
                 iconName="system_menu"
                 styleType="weak"
                 sizeType="sm"
                 classNames=""
-                [disabled]="false"
+                [disabled]="true"
                 [items]="rightMenuItems | async"
                 (menuItemClick)="onMenuItemClicked($event)"
-            ></pep-menu>
+            ></pep-menu> -->
         </div>
         <pep-list-actions #listActions *ngIf="showListActions" (menuClick)="onLeftMenuClicked();" (actionClick)="onMenuItemClicked($event)" sizeType="sm" [actions]="leftMenuItems | async"></pep-list-actions>
     </pep-top-bar>

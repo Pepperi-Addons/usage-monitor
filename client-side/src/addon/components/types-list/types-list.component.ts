@@ -264,9 +264,9 @@ export class TypesListComponent implements OnInit {
     async getLeftMenu(): Promise<PepMenuItem[]> {
         const apiNames: Array<PepMenuItem> = [];
 
-        this.translate.get('MoreInfoOpensGraph').subscribe((txt: string) => { 
-            apiNames.push(new PepMenuItem({key: "MoreInfoOpensGraph", text: txt}))
-        });
+        // this.translate.get('MoreInfoOpensGraph').subscribe((txt: string) => { 
+        //     apiNames.push(new PepMenuItem({key: "MoreInfoOpensGraph", text: txt}))
+        // });
 
         this.translate.get('UpdateSingleValue').subscribe((txt: string) => { 
             apiNames.push(new PepMenuItem({key: "UpdateSingleValue", text: txt}));
