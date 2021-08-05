@@ -254,7 +254,7 @@ export async function collect_data(client: Client, request: Request) {
         papiClient.catalogs.count({include_deleted:false})
             .then(x => catalogsCount = x)
             .catch(error => errors.push({object:'Catalogs', error:('message' in error) ? error.message : 'general error'})),
-        papiClient.contacts.count({include_deleted:false})
+        papiClient.contacts.count({include_deleted:false, where:'IsBuyer=false'})
             .then(x => contactsCount = x)
             .catch(error => errors.push({object:'Contacts', error:('message' in error) ? error.message : 'general error'})),
         papiClient.profiles.count({include_deleted:false})
