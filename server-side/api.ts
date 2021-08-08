@@ -144,6 +144,33 @@ export async function triggered_by_pns(client: Client, request: Request) {
     }
 }
 
+// Extracted this to a function because code job isn't authorized to get from parameter store.
+// So this function is called over http from within run_collect_data (which is called by a code job). 
+export async function push_data_to_crm(client: Client, request: Request) {
+    const service = new MyService(client);
+
+    try {
+        console.log("About to get CRM credentials from AWS Parameter Store...");
+        let clientSecret = await service.getParameter("CRMClientSecret", true);
+        console.log("Got CRM credentials, about to send data to CRM...");
+        let res_collect_data = request.body;
+        const retCRM = await createPepperiUsage(clientSecret, res_collect_data);
+        console.log("Data sent to CRM successfully.");
+
+        return {
+            success: true,
+            CRMData: retCRM
+        }
+    }
+    catch (error)
+    {
+        return {
+            success: false,
+            errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
+        }
+    }
+}
+
 // Function to be run from Pepperi Usage Monitor Addon Code Job
 // Gets the data, inserts to adal table, then to CRM.
 export async function run_collect_data(client: Client, request: Request) {
@@ -156,22 +183,13 @@ export async function run_collect_data(client: Client, request: Request) {
         // Run main data collection function
         const res_collect_data = await collect_data(client, request);
 
-        try {
-            console.log("Call to collect_data ended, about to get CRM credentials from AWS Parameter Store...");
-            let clientSecret = await service.getParameter("CRMClientSecret", true);
-            console.log("Got CRM credentials, about to send data to CRM...");
-            const retCRM = await createPepperiUsage(clientSecret, res_collect_data);
-            console.log("Data sent to CRM successfully.");
+        // Insert data to CRM. 
+        // Need to do this synchronously by using http call instead of direct function call (code jobs don't have permission to get parameter from parameter store)
+        console.log("About to call function push_data_to_crm over http...");
+        let retCRM = await papiClient.addons.api.uuid(client.AddonUUID).file('api').func('push_data_to_crm').post({}, res_collect_data);
+        console.log("Response from push_data_to_crm: " + JSON.stringify(retCRM));
 
-            res_collect_data.CRMData = retCRM;
-        }
-        catch (error)
-        {
-            return {
-                success: false,
-                errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
-            }
-        }
+        res_collect_data.CRMData = retCRM;
 
         console.log(`About to add data to table ${UsageMonitorTable.Name}.`);
 
