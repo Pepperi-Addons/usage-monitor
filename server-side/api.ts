@@ -223,7 +223,6 @@ export async function collect_data(client: Client, request: Request) {
     let transactionLinesCount: any = null;
     let imagesCount: any = null;
     let userDefinedTablesLinesCount: any = null;
-    let distributorData: any = null;
 
     // Working users/buyers created at least one new activity in all_activities in the last month.
     let lastMonth = new Date(Date.now());
@@ -233,10 +232,15 @@ export async function collect_data(client: Client, request: Request) {
     // Hack: shorten ISO format, remove the time. This is b/c papi cannot parse ISO string with decimal point for seconds.
     // See: https://pepperi.atlassian.net/browse/DI-18019
     const lastMonthStringWithoutTime = lastMonthString.split('T')[0] + 'Z';
-    const allActivitiesUsersAndBuyersTask = papiClient.allActivities.count({where:"CreationDateTime>'" + lastMonthStringWithoutTime + "'", group_by:"CreatorInternalID"});
+    const allActivitiesUsersAndBuyersTask = papiClient.allActivities.count({where:"CreationDateTime>'" + lastMonthStringWithoutTime + "'", group_by:"CreatorInternalID"})
+        .catch(error => errors.push({object:'AllActivitiesUsersAndBuyers', error:('message' in error) ? error.message : 'general error'}));
     
     let workingUsers = 0;
     let workingBuyers = 0;
+
+    let distributorDataUUID: any = null;
+    let distributorDataInternalID: any = null;
+    let distributorDataMaxEmployees: any = null;
 
     await Promise.all([
         papiClient.users.count({include_deleted:false})
@@ -303,7 +307,11 @@ export async function collect_data(client: Client, request: Request) {
             .then(x => userDefinedTablesLinesCount = x)
             .catch(error => errors.push({object:'UserDefinedTablesLines', error:('message' in error) ? error.message : 'general error'})),
         service.GetDistributor(papiClient)
-            .then(x => distributorData = x)
+            .then(x => {
+                distributorDataUUID = x.UUID; 
+                distributorDataInternalID = x.InternalID;
+                distributorDataMaxEmployees = x.MaxEmployees;
+            })
             .catch(error => errors.push({object:'DistributorData', error:('message' in error) ? error.message : 'general error'})),
         papiClient.contacts.iter({include_deleted:false, where:'IsBuyer=true', fields:['InternalID']}).toArray()
             .then(async x => {
@@ -343,11 +351,11 @@ export async function collect_data(client: Client, request: Request) {
         ExpirationDateTime: service.getExpirationDateTime(),
         Year: service.getFullYear(),
         Week: service.getNumberOfWeek(),
-        DistributorUUID: distributorData.UUID,
-        DistributorInternalID: distributorData.InternalID
+        DistributorUUID: distributorDataUUID,
+        DistributorInternalID: distributorDataInternalID
     };
     result.Setup = {
-        LicensedUsers: distributorData.MaxEmployees,
+        LicensedUsers: distributorDataMaxEmployees,
         ActualUsers: actualUsersCount, 
         Accounts: accountsCount,
         Items: itemsCount,
