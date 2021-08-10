@@ -1,6 +1,6 @@
 import { ListSearch, ObjectType, relationTypesEnum, RemoteModuleOptions } from './../../../../../model';
 import { PepperiTableComponent } from './pepperi-table/pepperi-table.component';
-import { AddTypeDialogComponent } from './add-type-dialog/add-type-dialog.component';
+import { ChartDialogComponent } from './chart-dialog/chart-dialog';
 import { Component, ComponentRef, Input, OnInit, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
 import { TitleCasePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -198,6 +198,8 @@ export class TypesListComponent implements OnInit {
         const rowData = this.table?.getItemDataByID(selectedRows[0]);
         const dataItem = rowData?.Fields[0]?.Value;
         const menuKey = e?.source?.key;
+        const prefix = rowData?.Fields[0]?.AdditionalValue;
+        const requestKey = prefix + "." + dataItem;
         
         switch (menuKey)
         {
@@ -206,8 +208,6 @@ export class TypesListComponent implements OnInit {
                 break;
 
             case "UpdateSingleValue":
-                const prefix = rowData?.Fields[0]?.AdditionalValue;
-                const requestKey = prefix + "." + dataItem;
                 // localhost:
                 //let url = 'http://localhost:4400/api/get_latest_data_for_key?key=' + requestKey;
                 //this.http.getHttpCall(encodeURI(url)).subscribe(
@@ -233,6 +233,13 @@ export class TypesListComponent implements OnInit {
                     (error) => this.openErrorDialog(error),
                     () => {}
                 );
+
+                break;
+
+            case "MoreInfoOpensGraph":
+                const dataItemFormattedValue = rowData?.Fields[0]?.FormattedValue;
+                const dataItemDescription = rowData?.Fields[1]?.FormattedValue;
+                this.openChart(requestKey, dataItemFormattedValue, dataItemDescription);
 
                 break;
 
@@ -264,9 +271,9 @@ export class TypesListComponent implements OnInit {
     async getLeftMenu(): Promise<PepMenuItem[]> {
         const apiNames: Array<PepMenuItem> = [];
 
-        // this.translate.get('MoreInfoOpensGraph').subscribe((txt: string) => { 
-        //     apiNames.push(new PepMenuItem({key: "MoreInfoOpensGraph", text: txt}))
-        // });
+        this.translate.get('MoreInfoOpensGraph').subscribe((txt: string) => { 
+            apiNames.push(new PepMenuItem({key: "MoreInfoOpensGraph", text: txt}))
+        });
 
         this.translate.get('UpdateSingleValue').subscribe((txt: string) => { 
             apiNames.push(new PepMenuItem({key: "UpdateSingleValue", text: txt}));
@@ -298,5 +305,19 @@ export class TypesListComponent implements OnInit {
             content: content
         });
         this.dialogService.openDefaultDialog(data);
+    }
+
+    openChart(dataItem: string, dataItemFormattedValue: string, dataItemDescription: string) {
+        this.dialogService.openDialog(ChartDialogComponent, 
+            {
+                dataItem: dataItem, 
+                dataItemFormattedValue: dataItemFormattedValue,
+                dataItemDescription: dataItemDescription
+            },
+            {
+                hasBackdrop: true,
+                height: '60vh',
+                width: '80vh'
+            });
     }
 }

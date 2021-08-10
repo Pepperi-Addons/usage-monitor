@@ -8,7 +8,7 @@ import { TypesListComponent } from './components/types-list/types-list.component
 import { PepUIModule } from './modules/pepperi.module';
 import { MaterialModule } from './modules/material.module';
 import { SettingsTabsComponent } from './components/settings-tabs/settings-tabs.component';
-import { AddTypeDialogComponent } from './components/types-list/add-type-dialog/add-type-dialog.component';
+import { ChartDialogComponent } from './components/types-list/chart-dialog/chart-dialog';
 import { PepperiTableComponent } from './components/types-list/pepperi-table/pepperi-table.component';
 import { EmptyRouteComponent } from './components/empty-route/empty-route.component';
 import { PepRemoteLoaderModule } from '@pepperi-addons/ngx-remote-loader';
@@ -22,7 +22,7 @@ import { PepAddonService, PepCustomizationService, PepHttpService } from '@peppe
         AddonComponent,
         TypesListComponent,
         SettingsTabsComponent,
-        AddTypeDialogComponent,
+        ChartDialogComponent,
         PepperiTableComponent,
         EmptyRouteComponent
     ],

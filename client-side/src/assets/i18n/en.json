@@ -69,7 +69,7 @@
     "ListTotal_ShowingResults": "{{ totalRows }} results",
     "ListTotal_ShowingResult": "{{ totalRows }} result",
     
-    
+    "Chart_Title_For_Data_Item": "{{dataItemFormattedValue}}",
 
     
     "Components_Example_Title": "@pep-addons/ngx-lib : Pepperi Components - Library components written with Angular10",
