@@ -1,0 +1,16 @@
+<!-- <pep-dialog class="dialog-new-type-container" [title]="'Add_New_Header' | translate: {objectType: data?.type }"> -->
+<pep-dialog class="dialog-new-type-container" [title]="'Chart_Title_For_Data_Item' | translate: {dataItemFormattedValue: dataItemFormattedValue }">
+    <ng-container pep-dialog-content>
+
+        <div class="chart chart-background">
+            <p class="pep-border-bottom">{{dataItemDescription}}</p>
+            <canvas #dataItemChart id="dataItemChart"></canvas>
+        </div>
+        
+    </ng-container>
+    <div pep-dialog-actions class="pep-spacing-element-negative">
+            <button mat-button [mat-dialog-close]="null" class="pep-spacing-element pep-button md weak">
+                {{ 'ACTIONS.CLOSE' | translate }}
+            </button>
+    </div>
+</pep-dialog>
