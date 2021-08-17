@@ -107,17 +107,13 @@ export class TypesListComponent implements OnInit {
 
         switch (key) {
             case 'Data':
-                //dataRowField.FormattedValue = object[key]?.UserDefinedTablesLines?.toString();//JSON.stringify(object[key]);
-                //dataRowField.FormattedValue = this.translate.instant(object[key]);
-                //dataRowField.FormattedValue = object[key];
+                dataRowField.ColumnWidth = 20;
                 dataRowField.AdditionalValue = object.Prefix;
                 break;
             case 'Description':
                 dataRowField.ColumnWidth = 65;
-                //dataRowField.FormattedValue = "Description for " + object.Data;
                 break;
             case 'Size':
-                //dataRowField.AdditionalValue = object;
                 dataRowField.ColumnWidth = 35;
                 break;
             default:
