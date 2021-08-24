@@ -304,16 +304,16 @@ export class TypesListComponent implements OnInit {
     }
 
     openChart(dataItem: string, dataItemFormattedValue: string, dataItemDescription: string) {
+        const dialogConfig = this.dialogService.getDialogConfig(
+            {}, 'large'
+        )
         this.dialogService.openDialog(ChartDialogComponent, 
             {
                 dataItem: dataItem, 
                 dataItemFormattedValue: dataItemFormattedValue,
                 dataItemDescription: dataItemDescription
             },
-            {
-                hasBackdrop: true,
-                height: '60vh',
-                width: '80vh'
-            });
+            dialogConfig
+            );
     }
 }
