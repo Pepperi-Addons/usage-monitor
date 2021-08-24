@@ -4,6 +4,34 @@ import { UsageMonitorTable } from './installation'
 import { createPepperiUsage } from './crm-connector'
 import { get } from 'lodash';
 
+export async function get_relations_data(client: Client) {
+    const service = new MyService(client);
+    const papiClient = service.papiClient;
+
+    const relations = papiClient.addons.data.relations.iter({where: "RelationName='UsageMonitor'"});
+    let retRelations:{AddonUUID:string, AddonRelativeURL:string, url:string}[] = [];
+
+    for await (const relation of relations)
+    {
+        try {
+            const url = `/addons/api/${relation.AddonUUID}${relation.AddonRelativeURL?.startsWith('/') ? relation.AddonRelativeURL : '/' + relation.AddonRelativeURL}`;
+            const data = await service.papiClient.get(url);
+            //const data = await papiClient.addons.api.uuid(relation.AddonUUID).file('api').func('push_data_to_crm').get();
+        
+            retRelations.push({AddonUUID: relation.AddonUUID, AddonRelativeURL: relation.AddonRelativeURL!, url: url});
+        }
+        catch (error)
+        {
+            return {
+                success: false,
+                errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
+            }
+        }
+    }
+
+    return retRelations;
+}
+
 async function get_all_data_internal(client: Client) {
     const service = new MyService(client);
     let papiClient = service.papiClient;
@@ -373,13 +401,6 @@ export async function collect_data(client: Client, request: Request) {
         DistributorInternalID: distributorDataInternalID
     };
     result.Setup = {
-        LicensedUsers: distributorDataMaxEmployees,
-        ActualUsers: actualUsersCount, 
-        Accounts: accountsCount,
-        Items: itemsCount,
-        Catalogs: catalogsCount,
-        Contacts: contactsCount,
-        Buyers: buyersCount,
         Profiles: profilesCount,
         TransactionTypes: transactionTypesCount,
         ActivityTypes: activityTypesCount,
@@ -389,7 +410,6 @@ export async function collect_data(client: Client, request: Request) {
         TransactionLineFields: transactionLineFieldsCount,
         ItemFields: itemFieldsCount,
         AccountFields: accountFieldsCount,
-        UserDefinedTables: userDefinedTablesCount,
         SecurityGroups: null
     };
 
@@ -399,11 +419,19 @@ export async function collect_data(client: Client, request: Request) {
     }
 
     result.Data = {
+        Accounts: accountsCount,
+        ActualUsers: actualUsersCount, 
+        Buyers: buyersCount,
+        Catalogs: catalogsCount,
+        Contacts: contactsCount,
+        Items: itemsCount,
+        LicensedUsers: distributorDataMaxEmployees,
         NucleusTransactions: transactionsCount,
         NucleusActivities: activitiesCount,
         NucleusTransactionLines: transactionLinesCount,
         DatabaseAllActivities: null,
         Images: imagesCount,
+        UserDefinedTables: userDefinedTablesCount,
         UserDefinedTablesLines: userDefinedTablesLinesCount,
         Attachments: null
     }
