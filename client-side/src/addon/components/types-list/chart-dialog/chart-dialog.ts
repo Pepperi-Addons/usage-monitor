@@ -67,7 +67,12 @@ export class ChartDialogComponent implements OnInit {
               }]
           },
           options: {
-            responsive:true,
+            responsive: true,
+            plugins: {
+              legend: {
+                display: false
+              }
+            },
             scales: {
                 x: {
                     type: 'time',
