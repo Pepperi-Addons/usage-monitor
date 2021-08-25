@@ -187,7 +187,7 @@ export async function push_data_to_crm(client: Client, request: Request) {
 
         return {
             success: true,
-            CRMData: retCRM
+            CRMResponse: retCRM
         }
     }
     catch (error)
