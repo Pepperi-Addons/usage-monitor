@@ -98,8 +98,8 @@ export async function createPepperiUsage(clientSecret: string, inputObject: {}) 
 	console.log(`Last record created: ${lastRecord}`);
 
 	return {
-		RecordID: recordid,
-		LastRecord: lastRecord
+		RecordID: recordid
+		// Removed per Ido's request: LastRecord: lastRecord
 	}
 }
 
