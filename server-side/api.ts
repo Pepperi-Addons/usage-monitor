@@ -3,22 +3,60 @@ import { Client, Request } from '@pepperi-addons/debug-server'
 import { UsageMonitorTable } from './installation'
 import { createPepperiUsage } from './crm-connector'
 import { get } from 'lodash';
+import { ConnectContactLens } from 'aws-sdk';
+
+export async function mock_relation()
+{
+    let rand = Math.floor(Math.random() * 100);
+    let rand1 = Math.floor(Math.random() * 100);
+    let rand2 = Math.floor(Math.random() * 100);
+    return {
+        Title: "Usage Monitor " + rand,
+        Resources: [
+            {
+                Data: "Amir Random Data " + rand1,
+                Description: "Description for Amir Data " + rand1,
+                Size: rand1
+            },
+            {
+                Data: "Amir Random Data " + rand2,
+                Description: "Description for Amir Data " + rand2,
+                Size: rand2
+            }
+        ]
+    }
+}
 
 export async function get_relations_data(client: Client) {
     const service = new MyService(client);
     const papiClient = service.papiClient;
 
     const relations = papiClient.addons.data.relations.iter({where: "RelationName='UsageMonitor'"});
-    let retRelations:{AddonUUID:string, AddonRelativeURL:string, url:string}[] = [];
+
+    let relationsDataList: {
+        [key: string]: [
+            {
+                Data: string,
+                Description: string,
+                Size: number
+            }
+        ]
+    }[] = [];
+
+    let arrPromises: Promise<any>[] = [];
 
     for await (const relation of relations)
     {
         try {
             const url = `/addons/api/${relation.AddonUUID}${relation.AddonRelativeURL?.startsWith('/') ? relation.AddonRelativeURL : '/' + relation.AddonRelativeURL}`;
-            const data = await service.papiClient.get(url);
-            //const data = await papiClient.addons.api.uuid(relation.AddonUUID).file('api').func('push_data_to_crm').get();
-        
-            retRelations.push({AddonUUID: relation.AddonUUID, AddonRelativeURL: relation.AddonRelativeURL!, url: url});
+
+            // "data" is an object containing a title and a list of objects. 
+            // See https://apidesign.pepperi.com/add-ons/addons-link-table/relation-names/usage-monitor
+            // Rearrange data from all external sources as a list of objects, each one has the title as key, and list of resources as value.
+            arrPromises.push(service.papiClient.get(url).then(data => relationsDataList.push({
+                [data.Title]: data.Resources
+            }))
+            .catch(error => console.error(`Error getting relation data from addon ${relation.AddonUUID} at url ${url}`)));
         }
         catch (error)
         {
@@ -29,7 +67,9 @@ export async function get_relations_data(client: Client) {
         }
     }
 
-    return retRelations;
+    await Promise.all(arrPromises);
+
+    return relationsDataList;
 }
 
 async function get_all_data_internal(client: Client) {
@@ -391,6 +431,7 @@ export async function collect_data(client: Client, request: Request) {
         Setup: {},
         Usage: {},
         Data: {},
+        ExternalData: {},
         Errors: {},
         CRMData: {},
         Key: new Date(Date.now()).toISOString(),
