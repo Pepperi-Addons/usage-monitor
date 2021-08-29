@@ -7,23 +7,23 @@ import { ConnectContactLens } from 'aws-sdk';
 
 export async function mock_relation()
 {
-    let rand = Math.floor(Math.random() * 100);
-    let rand1 = Math.floor(Math.random() * 100);
-    let rand2 = Math.floor(Math.random() * 100);
+    let randTitle = Math.floor(Math.random() * 100);
+    let randResources = Math.floor(Math.random() * 8) + 2; // number of resources (2-10)
+
+    let resources = new Array();
+    for (let i = 0; i < randResources; i++) {
+        let rand1 = Math.floor(Math.random() * 100);
+        let resource = {
+            Data: "Amir Random Data " + rand1,
+            Description: "Description for Amir Data " + rand1,
+            Size: rand1
+        };
+        resources.push(resource);
+    }
+
     return {
-        Title: "Usage Monitor " + rand,
-        Resources: [
-            {
-                Data: "Amir Random Data " + rand1,
-                Description: "Description for Amir Data " + rand1,
-                Size: rand1
-            },
-            {
-                Data: "Amir Random Data " + rand2,
-                Description: "Description for Amir Data " + rand2,
-                Size: rand2
-            }
-        ]
+        Title: "Usage Monitor " + randTitle,
+        Resources: resources
     }
 }
 
