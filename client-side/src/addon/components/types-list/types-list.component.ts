@@ -1,4 +1,4 @@
-import { ListSearch, ObjectType, relationTypesEnum, RemoteModuleOptions } from './../../../../../model';
+import { ListSearch, RemoteModuleOptions } from './../../../../../model';
 import { PepperiTableComponent } from './pepperi-table/pepperi-table.component';
 import { ChartDialogComponent } from './chart-dialog/chart-dialog';
 import { Component, ComponentRef, Input, OnInit, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
@@ -6,9 +6,8 @@ import { TitleCasePipe } from '@angular/common';
 import { ActivatedRoute, Router } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { PepHttpService, PepSessionService } from '@pepperi-addons/ngx-lib';
-import { PepDialogService, PepDialogActionButton, PepDialogData } from '@pepperi-addons/ngx-lib/dialog';
+import { PepDialogService, PepDialogData } from '@pepperi-addons/ngx-lib/dialog';
 import { PepMenuItem, IPepMenuItemClickEvent } from '@pepperi-addons/ngx-lib/menu';
-import { MatDialog } from '@angular/material/dialog';
 import { PepListActionsComponent } from '@pepperi-addons/ngx-lib/list';
 import { PapiClient } from '@pepperi-addons/papi-sdk';
 import { IPepButtonClickEvent } from '@pepperi-addons/ngx-lib/button';
