@@ -1,9 +1,8 @@
 import { ListSearch, RemoteModuleOptions } from './../../../../../model';
 import { PepperiTableComponent } from './pepperi-table/pepperi-table.component';
 import { ChartDialogComponent } from './chart-dialog/chart-dialog';
-import { Component, ComponentRef, Input, OnInit, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
-import { TitleCasePipe } from '@angular/common';
-import { ActivatedRoute, Router } from '@angular/router';
+import { Component, ComponentRef, Input, OnInit, SimpleChanges, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
+import { ActivatedRoute } from '@angular/router';
 import { TranslateService } from '@ngx-translate/core';
 import { PepHttpService, PepSessionService } from '@pepperi-addons/ngx-lib';
 import { PepDialogService, PepDialogData } from '@pepperi-addons/ngx-lib/dialog';
@@ -29,8 +28,6 @@ export class TypesListComponent implements OnInit {
     rightMenuItems: Promise<PepMenuItem[]>;
     totalRows = 0;
     displayedColumns: string[];
-    //transactionTypes;
-    latestData: { Setup: any; Data: any; Usage: any; };
     latestDataArray: { Data: string; Description: string; Size: number; Prefix: string; }[];
     searchString = '';
     searchAutoCompleteValues: any;
@@ -46,6 +43,7 @@ export class TypesListComponent implements OnInit {
     private listLoaded = false;
     @Input() type: any;
     @Input() ID: any;
+    @Input() data: any;
     
     private _isActive: boolean = false;
     @Input() 
@@ -53,7 +51,8 @@ export class TypesListComponent implements OnInit {
         this._isActive = value;
 
         if (value && !this.listLoaded) {
-            this.loadlist()
+            //this.loadlist()
+            //this.initListWithDataFromParent();
             this.listLoaded = true;
         }
     }
@@ -61,18 +60,15 @@ export class TypesListComponent implements OnInit {
         return this._isActive; 
     }
 
-    titlePipe = new TitleCasePipe();
     addonBaseURL = '';
     weekNumber = 0;
     lastUpdatedDate: string;
-
 
     constructor(
         private translate: TranslateService,
         private http: PepHttpService,
         private dialogService: PepDialogService,
         private session: PepSessionService,
-        private router: Router,
         private route: ActivatedRoute
 
     ) {
@@ -84,21 +80,14 @@ export class TypesListComponent implements OnInit {
     }
 
     async ngOnInit() {
-        // this.route.params.subscribe( params => {
-        //     //this.type = params.type;
-        //     //this.subType = params.sub_type;
-        //     //const addonUUID = params.addon_uuid;
-        //     this.leftMenuItems = this.getLeftMenu();
-        //     this.rightMenuItems = this.getRightMenu();
-        //     //this.loadlist(); // Moved to set isActive
-        // })
-        
         this.leftMenuItems = this.getLeftMenu();
         this.rightMenuItems = this.getRightMenu();
 
         this.route.queryParams.subscribe(queryParams => {
             this.addonBaseURL = queryParams?.addon_base_url;
         });
+
+        this.initListWithDataFromParent();
     }
 
     // List functions
@@ -134,7 +123,7 @@ export class TypesListComponent implements OnInit {
     }
 
     loadlist(change: ListSearch = { sortBy: 'Name', isAsc: true, searchString: ''}) {
-        this.initListWithData('get_latest_data'); // Gets data from adal
+        //this.initListWithData('get_latest_data'); // Gets data from adal
     }
 
     refreshButtonClicked(e: IPepButtonClickEvent) {
@@ -146,13 +135,8 @@ export class TypesListComponent implements OnInit {
         this.http.getPapiApiCall(encodeURI(url)).subscribe(
             (latest_data_received) => {
                 if (latest_data_received) {
-                    this.latestData = latest_data_received;
-
                     // Add the 3 parts of the result to a single array
-                    let latest_data_array = this.json2array_2(this.latestData, this.type);
-                    //let latest_data_array = this.json2array_2(this.latestData.Setup, 'Setup');
-                    //latest_data_array.push(...this.json2array_2(this.latestData.Data, 'Data'));
-                    //latest_data_array.push(...this.json2array_2(this.latestData.Usage, 'Usage'));
+                    let latest_data_array = this.json2array_2(latest_data_received, this.type);
 
                     // Sort array by its 'Data' column
                     latest_data_array.sort((a, b) => (a.Data > b.Data ? 1 : -1));
@@ -168,6 +152,26 @@ export class TypesListComponent implements OnInit {
             (error) => this.openErrorDialog(error),
             () => {}
         );
+    }
+
+    ngOnChanges(changes: SimpleChanges) {
+        if (changes['data']) {
+            this.initListWithDataFromParent();
+        }
+    }
+
+    initListWithDataFromParent() {
+        let latest_data_array = this.json2array_2(this.data, this.type);
+
+        // Sort array by its 'Data' column
+        latest_data_array.sort((a, b) => (a.Data > b.Data ? 1 : -1));
+
+        this.latestDataArray = latest_data_array;
+        this.displayedColumns = ['Data', 'Description', 'Size'];
+        this.totalRows = latest_data_array.length;
+
+        this.weekNumber = this.data.Week;
+        this.lastUpdatedDate = new Date(this.data.Key).toLocaleString();
     }
 
     json2array_2(json, prefix: string){
