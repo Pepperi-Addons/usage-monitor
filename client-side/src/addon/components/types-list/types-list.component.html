@@ -5,28 +5,6 @@
         <div header-start-content>
         </div>
         <div header-end-content class="pep-spacing-element-negative">
-            <p class="title-md">{{'Lastupdatedonweekdatetime' | translate}} {{weekNumber}}: {{lastUpdatedDate}}</p>
-            <pep-button class="pep-spacing-element"
-                value="{{'UpdateAllValues' | translate}}"
-                styleType="weak"
-                styleStateType="system"
-                sizeType="sm"
-                classNames="title-md"
-                [disabled]="false"
-                iconName="system_processing"
-                iconPosition="end"
-                [visible]="true"
-                (buttonClick)="refreshButtonClicked($event)">
-            </pep-button>
-            <!-- <pep-menu class="pep-spacing-element"
-                iconName="system_menu"
-                styleType="weak"
-                sizeType="sm"
-                classNames=""
-                [disabled]="true"
-                [items]="rightMenuItems | async"
-                (menuItemClick)="onMenuItemClicked($event)"
-            ></pep-menu> -->
         </div>
         <pep-list-actions #listActions *ngIf="showListActions" (menuClick)="onLeftMenuClicked();" (actionClick)="onMenuItemClicked($event)" sizeType="sm" [actions]="leftMenuItems | async"></pep-list-actions>
     </pep-top-bar>

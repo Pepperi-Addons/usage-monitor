@@ -9,7 +9,6 @@ import { PepDialogService, PepDialogData } from '@pepperi-addons/ngx-lib/dialog'
 import { PepMenuItem, IPepMenuItemClickEvent } from '@pepperi-addons/ngx-lib/menu';
 import { PepListActionsComponent } from '@pepperi-addons/ngx-lib/list';
 import { PapiClient } from '@pepperi-addons/papi-sdk';
-import { IPepButtonClickEvent } from '@pepperi-addons/ngx-lib/button';
 import { Subscription } from 'rxjs';
 
 @Component({
@@ -61,8 +60,6 @@ export class TypesListComponent implements OnInit {
     }
 
     addonBaseURL = '';
-    weekNumber = 0;
-    lastUpdatedDate: string;
 
     constructor(
         private translate: TranslateService,
@@ -114,7 +111,6 @@ export class TypesListComponent implements OnInit {
 
     onSortingChanged(e: ListSearch){
         e.searchString = '';
-        this.loadlist(e);
     }
 
     selectedRowsChanged(selectedRowsCount: number) {
@@ -122,40 +118,9 @@ export class TypesListComponent implements OnInit {
             this.selectedRows = selectedRowsCount;
     }
 
-    loadlist(change: ListSearch = { sortBy: 'Name', isAsc: true, searchString: ''}) {
-        //this.initListWithData('get_latest_data'); // Gets data from adal
-    }
-
-    refreshButtonClicked(e: IPepButtonClickEvent) {
-        this.initListWithData('collect_data'); // Generates updated data
-    }
-
-    initListWithData(apiFunc: string) {
-        let url = '/addons/api/00000000-0000-0000-0000-000000005A9E/api/' + apiFunc;
-        this.http.getPapiApiCall(encodeURI(url)).subscribe(
-            (latest_data_received) => {
-                if (latest_data_received) {
-                    // Add the 3 parts of the result to a single array
-                    let latest_data_array = this.json2array_2(latest_data_received, this.type);
-
-                    // Sort array by its 'Data' column
-                    latest_data_array.sort((a, b) => (a.Data > b.Data ? 1 : -1));
-
-                    this.latestDataArray = latest_data_array;
-                    this.displayedColumns = ['Data', 'Description', 'Size'];
-                    this.totalRows = latest_data_array.length;
-
-                    this.weekNumber = latest_data_received.Week;
-                    this.lastUpdatedDate = new Date(latest_data_received.Key).toLocaleString();
-                }
-            },
-            (error) => this.openErrorDialog(error),
-            () => {}
-        );
-    }
-
     ngOnChanges(changes: SimpleChanges) {
         if (changes['data']) {
+            //alert(JSON.stringify(changes['data'].currentValue));
             this.initListWithDataFromParent();
         }
     }
@@ -169,9 +134,6 @@ export class TypesListComponent implements OnInit {
         this.latestDataArray = latest_data_array;
         this.displayedColumns = ['Data', 'Description', 'Size'];
         this.totalRows = latest_data_array.length;
-
-        this.weekNumber = this.data.Week;
-        this.lastUpdatedDate = new Date(this.data.Key).toLocaleString();
     }
 
     json2array_2(json, prefix: string){

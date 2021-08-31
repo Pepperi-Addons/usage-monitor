@@ -2,6 +2,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { PepDialogService, PepDialogData } from '@pepperi-addons/ngx-lib/dialog';
 import { Component, OnInit } from '@angular/core';
 import { PepHttpService } from '@pepperi-addons/ngx-lib';
+import { IPepButtonClickEvent } from '@pepperi-addons/ngx-lib/button';
 
 @Component({
   selector: 'addon-settings-tabs',
@@ -13,6 +14,8 @@ export class SettingsTabsComponent implements OnInit {
     tabs: Array<any>;
     activeTabIndex = 0;
     currentData: Promise<any>;
+    weekNumber = 0;
+    lastUpdatedDate: string;
     
     constructor(
       private dialogService: PepDialogService,
@@ -24,7 +27,7 @@ export class SettingsTabsComponent implements OnInit {
 
     async ngOnInit() {
       this.activeTabIndex = 0;
-      this.initData('collect_data');
+      this.initData('get_latest_data');
     }
 
     initData(apiFunc: string) {
@@ -33,6 +36,9 @@ export class SettingsTabsComponent implements OnInit {
           (latest_data_received) => {
               if (latest_data_received) {
                 this.currentData = latest_data_received;
+                
+                this.weekNumber = latest_data_received.Week;
+                this.lastUpdatedDate = new Date(latest_data_received.Key).toLocaleString();
               }
           },
           (error) => this.openErrorDialog(error),
@@ -52,4 +58,8 @@ export class SettingsTabsComponent implements OnInit {
     tabClick(e){
         this.activeTabIndex = e.index;
     }
+
+    refreshButtonClicked(e: IPepButtonClickEvent) {
+        this.initData('collect_data'); // Generates updated data
+  }
 }

@@ -3,7 +3,20 @@
         <pep-top-bar [title]="('DataAndUsageReportTitle' | translate)">
             <div header-start-content>
             </div>
-            <div header-end-content>
+            <div header-end-content class="pep-spacing-element">
+                <p class="title-md">{{'Lastupdatedonweekdatetime' | translate}} {{weekNumber}}: {{lastUpdatedDate}}</p>
+                <pep-button class="pep-spacing-element"
+                    value="{{'UpdateAllValues' | translate}}"
+                    styleType="weak"
+                    styleStateType="system"
+                    sizeType="sm"
+                    classNames="title-md"
+                    [disabled]="false"
+                    iconName="system_processing"
+                    iconPosition="end"
+                    [visible]="true"
+                    (buttonClick)="refreshButtonClicked($event)">
+                </pep-button>
             </div>
         </pep-top-bar>
     </ng-container>
