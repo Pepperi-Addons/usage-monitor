@@ -63,7 +63,10 @@ export class ChartDialogComponent implements OnInit {
               datasets: [{
                   label: this.dataItemFormattedValue,
                   data: this.chartDataset(),
-                  borderColor: "#3e95cd"
+                  borderColor: "#3e95cd",
+                  tension: 0.4,
+                  cubicInterpolationMode: 'monotone',
+                  fill: false
               }]
           },
           options: {
