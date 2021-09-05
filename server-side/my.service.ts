@@ -57,7 +57,8 @@ class MyService {
             InternalID: distributorData.InternalID,
             Name: distributorData.Name,
             MachineAndPort: machineData.Machine + ":" + machineData.Port,
-            MaxEmployees: distributorData.MaxEmployees
+            MaxEmployees: distributorData.MaxEmployees,
+            AccountingStatus: distributorData.AccountingStatus?.Name
         };
         return distributor;
     }

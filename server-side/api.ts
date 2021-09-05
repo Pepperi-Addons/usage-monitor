@@ -326,6 +326,8 @@ export async function collect_data(client: Client, request: Request) {
 
     let distributorDataUUID: any = null;
     let distributorDataInternalID: any = null;
+    let distributorDataName: any = null;
+    let distributorDataAccountingStatus: any = null;
     let distributorDataMaxEmployees: any = null;
 
     let externalData: any = null;
@@ -398,6 +400,8 @@ export async function collect_data(client: Client, request: Request) {
             .then(x => {
                 distributorDataUUID = x.UUID; 
                 distributorDataInternalID = x.InternalID;
+                distributorDataName = x.Name;
+                distributorDataAccountingStatus = x.AccountingStatus;
                 distributorDataMaxEmployees = x.MaxEmployees;
             })
             .catch(error => errors.push({object:'DistributorData', error:('message' in error) ? error.message : 'general error'})),
@@ -443,7 +447,9 @@ export async function collect_data(client: Client, request: Request) {
         Year: service.getFullYear(),
         Week: service.getNumberOfWeek(),
         DistributorUUID: distributorDataUUID,
-        DistributorInternalID: distributorDataInternalID
+        DistributorInternalID: distributorDataInternalID,
+        distributorName: distributorDataName,
+        distributorAccountingStatus: distributorDataAccountingStatus
     };
     result.Setup = {
         Profiles: profilesCount,
