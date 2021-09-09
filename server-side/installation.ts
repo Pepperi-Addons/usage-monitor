@@ -115,7 +115,40 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
 }
 
 export async function upgrade(client: Client, request: Request): Promise<any> {
-    // New addon, no need for upgrade currently.
+    try {
+        const service = new MyService(client);
+        console.log("About to get addon version...")
+        let addon = await service.papiClient.addons.installedAddons.addonUUID(client.AddonUUID).get();
+        const version = addon?.Version?.split('.').map(item => {return Number(item)}) || [];
+        console.log(`Addon version is ${addon?.Version}`);
+        
+        // Update code job to 10 retries instead of 30
+        if (version.length==3 && version[2] < 48) {
+            console.log("About to get settings data...")
+            const distributor = await service.GetDistributor(service.papiClient);
+            const settingsData = await service.papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorSettings.Name).key(distributor.InternalID.toString()).get();
+            const codeJobUUID = settingsData.Data.UsageMonitorCodeJobUUID;
+            console.log(`Got code job UUID ${codeJobUUID}, about to post it again with 10 retries instead of 30...`);
+
+            const codeJob = await service.papiClient.codeJobs.upsert({
+                UUID: codeJobUUID,
+                CodeJobName: "Pepperi Usage Monitor",
+                NumberOfTries: 10
+            });
+
+            console.log("Successfully updated code job.")
+            console.log("Successfully upgraded addon to new version.")
+        }
+    }
+    catch (err)
+    {
+        return {
+            success: true, // No need to fail upgrade
+            errorMessage: ('message' in err) ? err.message : 'Failed to upgrade pepperi-usage addon',
+            resultObject: {}
+        };
+    }
+
     return {success:true,resultObject:{}}
 }
 
