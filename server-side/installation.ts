@@ -167,7 +167,7 @@ async function InstallUsageMonitor(service){
                     AddonPath: "api",
                     FunctionName: "run_collect_data",
                     AddonUUID: service.client.AddonUUID,
-                    NumberOfTries: 30,
+                    NumberOfTries: 10,
                 });
                 console.log("Code job Pepperi Usage Monitor created successfully.");
 
