@@ -283,6 +283,24 @@ export async function collect_data(client: Client, request: Request) {
 
     let errors:{object:string, error:string}[] = [];
 
+    let distributorDataUUID: any = null;
+    let distributorDataInternalID: any = null;
+    let distributorDataName: any = null;
+    let distributorDataAccountingStatus: any = null;
+    let distributorDataMaxEmployees: any = null;
+
+    console.log("About to send one sync request to make sure nuc is loaded before all other requests are sent.");
+
+    await service.GetDistributor(papiClient)
+            .then(x => {
+                distributorDataUUID = x.UUID; 
+                distributorDataInternalID = x.InternalID;
+                distributorDataName = x.Name;
+                distributorDataAccountingStatus = x.AccountingStatus;
+                distributorDataMaxEmployees = x.MaxEmployees;
+            })
+            .catch(error => errors.push({object:'DistributorData', error:('message' in error) ? error.message : 'general error'}));
+
     console.log("About to send async requests for data...");
 
     //console.log(service.functionName());
@@ -323,12 +341,6 @@ export async function collect_data(client: Client, request: Request) {
     
     let workingUsers = 0;
     let workingBuyers = 0;
-
-    let distributorDataUUID: any = null;
-    let distributorDataInternalID: any = null;
-    let distributorDataName: any = null;
-    let distributorDataAccountingStatus: any = null;
-    let distributorDataMaxEmployees: any = null;
 
     let externalData: any = null;
 
@@ -396,15 +408,6 @@ export async function collect_data(client: Client, request: Request) {
         papiClient.userDefinedTables.count({include_deleted:false})
             .then(x => userDefinedTablesLinesCount = x)
             .catch(error => errors.push({object:'UserDefinedTablesLines', error:('message' in error) ? error.message : 'general error'})),
-        service.GetDistributor(papiClient)
-            .then(x => {
-                distributorDataUUID = x.UUID; 
-                distributorDataInternalID = x.InternalID;
-                distributorDataName = x.Name;
-                distributorDataAccountingStatus = x.AccountingStatus;
-                distributorDataMaxEmployees = x.MaxEmployees;
-            })
-            .catch(error => errors.push({object:'DistributorData', error:('message' in error) ? error.message : 'general error'})),
         papiClient.contacts.iter({include_deleted:false, where:'IsBuyer=true', fields:['InternalID']}).toArray()
             .then(async x => {
                 buyersObjects = x; 
