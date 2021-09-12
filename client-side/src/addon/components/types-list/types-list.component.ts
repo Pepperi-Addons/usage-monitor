@@ -126,14 +126,16 @@ export class TypesListComponent implements OnInit {
     }
 
     initListWithDataFromParent() {
-        let latest_data_array = this.json2array_2(this.data, this.type);
+        if (this.data) {
+            let latest_data_array = this.json2array_2(this.data, this.type);
 
-        // Sort array by its 'Data' column
-        latest_data_array.sort((a, b) => (a.Data > b.Data ? 1 : -1));
+            // Sort array by its 'Data' column
+            latest_data_array.sort((a, b) => (a.Data > b.Data ? 1 : -1));
 
-        this.latestDataArray = latest_data_array;
-        this.displayedColumns = ['Data', 'Description', 'Size'];
-        this.totalRows = latest_data_array.length;
+            this.latestDataArray = latest_data_array;
+            this.displayedColumns = ['Data', 'Description', 'Size'];
+            this.totalRows = latest_data_array.length;
+        }
     }
 
     json2array_2(json, prefix: string){
