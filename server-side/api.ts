@@ -342,7 +342,7 @@ export async function collect_data(client: Client, request: Request) {
     let workingUsers = 0;
     let workingBuyers = 0;
 
-    let externalData: any = null;
+    let relationsData: any = null;
 
     await Promise.all([
         papiClient.users.count({include_deleted:false})
@@ -433,8 +433,8 @@ export async function collect_data(client: Client, request: Request) {
             })
             .catch(error => errors.push({object:'Buyers', error:('message' in error) ? error.message : 'general error'})),
         get_relations_data(client)
-            .then(x => externalData = x)
-            .catch(error => errors.push({object:'ExternalData', error:('message' in error) ? error.message : 'general error'}))
+            .then(x => relationsData = x)
+            .catch(error => errors.push({object:'RelationsData', error:('message' in error) ? error.message : 'general error'}))
     ] as Promise<any>[])
 
     // Result object construction
@@ -442,7 +442,7 @@ export async function collect_data(client: Client, request: Request) {
         Setup: {},
         Usage: {},
         Data: {},
-        ExternalData: externalData,
+        RelationsData: relationsData,
         Errors: {},
         CRMData: {},
         Key: new Date(Date.now()).toISOString(),
