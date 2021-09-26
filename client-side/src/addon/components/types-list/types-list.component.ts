@@ -43,6 +43,7 @@ export class TypesListComponent implements OnInit {
     @Input() type: any;
     @Input() ID: any;
     @Input() data: any;
+    @Input() relationsData: any;
     
     private _isActive: boolean = false;
     @Input() 
@@ -123,6 +124,25 @@ export class TypesListComponent implements OnInit {
             //alert(JSON.stringify(changes['data'].currentValue));
             this.initListWithDataFromParent();
         }
+        else if (changes['relationsData']) {
+            this.initListWithRelationsData();
+        }
+    }
+
+    initListWithRelationsData() {
+        if (this.relationsData) {
+            //alert('isActive: ' + this.isActive + ', type: '+this.type+', ID: '+this.ID + ', data: ' + JSON.stringify(this.relationsData));
+            //alert('Current tab data: ' + this.relationsData.tab)
+
+            // Copy array from received data to table data.
+            let receivedData = JSON.parse(JSON.stringify(Object.values(this.relationsData)[0]));;
+            let prefix = Object.keys(this.relationsData)[0];
+            receivedData.map(x => x.Prefix = prefix);
+
+            this.latestDataArray = receivedData;
+            this.displayedColumns = ['Data', 'Description', 'Size'];
+            this.totalRows = this.latestDataArray.length;
+        }
     }
 
     initListWithDataFromParent() {
@@ -139,7 +159,7 @@ export class TypesListComponent implements OnInit {
     }
 
     json2array_2(json, prefix: string){
-        let jsonPortion = json[this.type];
+        let jsonPortion = json[prefix];
         return Object.keys(jsonPortion).map(key => {
             const res = {Data:"", Description:"", Size:0, Prefix:""};
             res.Data = key; 
