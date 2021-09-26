@@ -16,6 +16,7 @@ export class SettingsTabsComponent implements OnInit {
     currentData: Promise<any>;
     weekNumber = 0;
     lastUpdatedDate: string;
+    relationsData: {}[];
     
     constructor(
       private dialogService: PepDialogService,
@@ -39,6 +40,8 @@ export class SettingsTabsComponent implements OnInit {
                 
                 this.weekNumber = latest_data_received.Week;
                 this.lastUpdatedDate = new Date(latest_data_received.Key).toLocaleString();
+
+                this.relationsData = latest_data_received.RelationsData;
               }
           },
           (error) => this.openErrorDialog(error),
@@ -61,5 +64,9 @@ export class SettingsTabsComponent implements OnInit {
 
     refreshButtonClicked(e: IPepButtonClickEvent) {
         this.initData('collect_data'); // Generates updated data
+  }
+
+  getRelationDataTabLabel(tab) {
+    return Object.keys(tab)[0];
   }
 }
