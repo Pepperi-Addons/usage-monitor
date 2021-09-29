@@ -111,7 +111,7 @@ function get_object_value(obj, requestedKey) {
 
         return objectValue;
     }
-    catch (error)
+    catch (error: any)
     {
         console.log(('message' in error) ? error.message : 'Unknown error occurred, see logs.');
     }
