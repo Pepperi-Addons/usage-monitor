@@ -95,16 +95,19 @@ function get_object_value(obj, requestedKey) {
             // requestedKey might be in relations data. It has a different structure (see DataExample.json) so need to iterate the keys.
             const relationsDataArray = obj.RelationsData;
 
-            // Find sub-array which has the requested key (first token)
-            const element = relationsDataArray.find((x) => (Object.keys(x)[0] === requestedKeyTokens[0]));
+            if (relationsDataArray != null) {
 
-            // If found, find the correct data (second token)
-            if (element !== undefined) {
-                const subArray = element[requestedKeyTokens[0]];
-                const resource = subArray.find((x) => (x.Data === requestedKeyTokens[1]));
+                // Find sub-array which has the requested key (first token)
+                const element = relationsDataArray.find((x) => (Object.keys(x)[0] === requestedKeyTokens[0]));
 
-                if (resource !== undefined) {
-                    objectValue = resource.Size;
+                // If found, find the correct data (second token)
+                if (element !== undefined) {
+                    const subArray = element[requestedKeyTokens[0]];
+                    const resource = subArray.find((x) => (x.Data === requestedKeyTokens[1]));
+
+                    if (resource !== undefined) {
+                        objectValue = resource.Size;
+                    }
                 }
             }
         }
