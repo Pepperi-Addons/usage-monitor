@@ -82,6 +82,43 @@ async function get_all_data_internal(client: Client) {
     return all_data;
 }
 
+// First try to get value by using direct property reference.
+// If not found, try relations data section which has a different structure.
+function get_object_value(obj, requestedKey) {
+    try {
+        let objectValue = get(obj, requestedKey);
+
+        if (objectValue === undefined) {
+            // Get tokens of requestedKey.
+            const requestedKeyTokens = requestedKey.split('.'); // Should be an array of 2. First one is the key, second is the value of 'Data' in the array of resources under it.
+
+            // requestedKey might be in relations data. It has a different structure (see DataExample.json) so need to iterate the keys.
+            const relationsDataArray = obj.RelationsData;
+
+            // Find sub-array which has the requested key (first token)
+            const element = relationsDataArray.find((x) => (Object.keys(x)[0] === requestedKeyTokens[0]));
+
+            // If found, find the correct data (second token)
+            if (element !== undefined) {
+                const subArray = element[requestedKeyTokens[0]];
+                const resource = subArray.find((x) => (x.Data === requestedKeyTokens[1]));
+
+                if (resource !== undefined) {
+                    objectValue = resource.Size;
+                }
+            }
+        }
+
+        return objectValue;
+    }
+    catch (error)
+    {
+        console.log(('message' in error) ? error.message : 'Unknown error occurred, see logs.');
+    }
+
+    return null;
+}
+
 // Returns a list of one key's values per date, no time limit backwards
 // See: DataExample for data object.
 // .../get_all_data_for_key?key=Data.NucleusTransactions
@@ -100,7 +137,7 @@ export async function get_all_data_for_key(client: Client, request: Request) {
         const all_data_for_key = sorted_all_data?.map((obj) => {
             let date: string = obj?.Key!.toString();
             return {
-                [date]: get(obj, requestedKey)
+                [date]: get_object_value(obj, requestedKey)
             };
         });
 
@@ -129,7 +166,7 @@ export async function get_latest_data_for_key(client: Client, request: Request) 
             date = latest_data?.Key!.toString();
         
             return {
-                [date]: get(latest_data, requestedKey)
+                [date]: get_object_value(latest_data, requestedKey)
             }
         }
     }
