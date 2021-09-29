@@ -58,7 +58,7 @@ export async function get_relations_data(client: Client) {
             }))
             .catch(error => console.error(`Error getting relation data from addon ${relation.AddonUUID} at url ${url}`)));
         }
-        catch (error)
+        catch (error: any)
         {
             return {
                 success: false,
@@ -143,7 +143,7 @@ export async function get_all_data_for_key(client: Client, request: Request) {
 
         return all_data_for_key;
     }
-    catch (error)
+    catch (error: any)
     {
         return {
             success: false,
@@ -170,7 +170,7 @@ export async function get_latest_data_for_key(client: Client, request: Request) 
             }
         }
     }
-    catch (error)
+    catch (error: any)
     {
         return {
             success: false,
@@ -193,7 +193,7 @@ export async function get_all_data(client: Client, request: Request) {
         else
             return null;
     }
-    catch (error) {
+    catch (error: any) {
         return {
             success: false,
             errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
@@ -223,7 +223,7 @@ export async function get_latest_data(client: Client, request: Request) {
         else
             return null;
     }
-    catch (error) {
+    catch (error: any) {
         return {
             success: false,
             errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
@@ -240,7 +240,7 @@ export async function triggered_by_pns(client: Client, request: Request) {
         request.body.Key = new Date(Date.now()).toISOString();
         await papiClient.addons.data.uuid(client.AddonUUID).table("UsageMonitorDebug").upsert(request.body);
     }
-    catch (error) {
+    catch (error: any) {
         const errorObj = {
             Key: new Date(Date.now()).toISOString(),
             Message: error.message
@@ -267,7 +267,7 @@ export async function push_data_to_crm(client: Client, request: Request) {
             CRMResponse: retCRM
         }
     }
-    catch (error)
+    catch (error: any)
     {
         return {
             success: false,
@@ -305,7 +305,7 @@ export async function run_collect_data(client: Client, request: Request) {
 
         return res_collect_data;
     }
-    catch (error)
+    catch (error: any)
     {
         return {
             success: false,
@@ -464,7 +464,7 @@ export async function collect_data(client: Client, request: Request) {
 
                     workingUsers = Object.keys(allActivitiesUsersAndBuyers).length - workingBuyers;
                 }
-                catch (error) {
+                catch (error: any) {
                     errors.push({object:'WorkingUsers', error:('message' in error) ? error.message : 'general error'});
                 }
             })
