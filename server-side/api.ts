@@ -3,7 +3,6 @@ import { Client, Request } from '@pepperi-addons/debug-server'
 import { UsageMonitorTable } from './installation'
 import { createPepperiUsage } from './crm-connector'
 import { get } from 'lodash';
-import { ConnectContactLens } from 'aws-sdk';
 
 export async function mock_relation()
 {
