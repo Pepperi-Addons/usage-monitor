@@ -4,6 +4,7 @@ import { UsageMonitorTable } from './installation'
 import { createPepperiUsage } from './crm-connector'
 import { get } from 'lodash';
 
+// Random data
 export async function mock_relation()
 {
     let randTitle = Math.floor(Math.random() * 100);
@@ -26,6 +27,7 @@ export async function mock_relation()
     }
 }
 
+// Hard coded data
 export async function mock_relation2() {
     return {
         Title: "Mock Relation",
@@ -36,6 +38,7 @@ export async function mock_relation2() {
     }
 }
 
+// Hard coded data
 export async function mock_relation3() {
     return {
         Title: "Mock Relation",
@@ -47,6 +50,8 @@ export async function mock_relation3() {
     }
 }
 
+// Gets all data from relations posted to usage monitor. 
+// See https://apidesign.pepperi.com/add-ons/addons-link-table/relation-names/usage-monitor
 export async function get_relations_data(client: Client) {
     const service = new MyService(client);
     const papiClient = service.papiClient;
@@ -70,7 +75,6 @@ export async function get_relations_data(client: Client) {
             const url = `/addons/api/${relation.AddonUUID}${relation.AddonRelativeURL?.startsWith('/') ? relation.AddonRelativeURL : '/' + relation.AddonRelativeURL}`;
 
             // "data" is an object containing a title and a list of objects. 
-            // See https://apidesign.pepperi.com/add-ons/addons-link-table/relation-names/usage-monitor
             // Rearrange data from all external sources as a list of objects, each one has the title as key, and list of resources as value.
             arrPromises.push(service.papiClient.get(url).then(data => {
 
@@ -102,6 +106,7 @@ export async function get_relations_data(client: Client) {
     return relationsDataList;
 }
 
+// Gets all data from adal
 async function get_all_data_internal(client: Client) {
     const service = new MyService(client);
     let papiClient = service.papiClient;
@@ -356,6 +361,7 @@ export async function run_collect_data(client: Client, request: Request) {
     }
 }
 
+// Main function to get all data from api calls, gather the data in one result object, including relations data.
 export async function collect_data(client: Client, request: Request) {
     const service = new MyService(client);
     let papiClient = service.papiClient;
