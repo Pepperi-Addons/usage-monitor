@@ -83,7 +83,7 @@ export async function get_relations_data(client: Client) {
                 }
                 else {
                     relationsDataList.push({
-                [data.Title]: data.Resources
+                    [data.Title]: data.Resources
                 })}})
             .catch(error => console.error(`Error getting relation data from addon ${relation.AddonUUID} at url ${url}`)));
         }
@@ -144,8 +144,9 @@ function get_object_value(obj, requestedKey) {
 
         return objectValue;
     }
-    catch (error: any)
+    catch (error)
     {
+        if (error instanceof Error)
         console.log(('message' in error) ? error.message : 'Unknown error occurred, see logs.');
     }
 
@@ -176,8 +177,9 @@ export async function get_all_data_for_key(client: Client, request: Request) {
 
         return all_data_for_key;
     }
-    catch (error: any)
+    catch (error)
     {
+        if (error instanceof Error)
         return {
             success: false,
             errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
@@ -203,8 +205,9 @@ export async function get_latest_data_for_key(client: Client, request: Request) 
             }
         }
     }
-    catch (error: any)
+    catch (error)
     {
+        if (error instanceof Error)
         return {
             success: false,
             errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
@@ -226,7 +229,8 @@ export async function get_all_data(client: Client, request: Request) {
         else
             return null;
     }
-    catch (error: any) {
+    catch (error) {
+        if (error instanceof Error)
         return {
             success: false,
             errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
@@ -256,7 +260,8 @@ export async function get_latest_data(client: Client, request: Request) {
         else
             return null;
     }
-    catch (error: any) {
+    catch (error) {
+        if (error instanceof Error)
         return {
             success: false,
             errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
@@ -273,12 +278,14 @@ export async function triggered_by_pns(client: Client, request: Request) {
         request.body.Key = new Date(Date.now()).toISOString();
         await papiClient.addons.data.uuid(client.AddonUUID).table("UsageMonitorDebug").upsert(request.body);
     }
-    catch (error: any) {
-        const errorObj = {
-            Key: new Date(Date.now()).toISOString(),
-            Message: error.message
-        };
-        await papiClient.addons.data.uuid(client.AddonUUID).table("UsageMonitorDebug").upsert(errorObj);
+    catch (error) {
+        if (error instanceof Error) {
+            const errorObj = {
+                Key: new Date(Date.now()).toISOString(),
+                Message: error.message
+            };
+            await papiClient.addons.data.uuid(client.AddonUUID).table("UsageMonitorDebug").upsert(errorObj);
+        }
     }
 }
 
@@ -300,8 +307,9 @@ export async function push_data_to_crm(client: Client, request: Request) {
             CRMResponse: retCRM
         }
     }
-    catch (error: any)
+    catch (error)
     {
+        if (error instanceof Error)
         return {
             success: false,
             errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
@@ -338,8 +346,9 @@ export async function run_collect_data(client: Client, request: Request) {
 
         return res_collect_data;
     }
-    catch (error: any)
+    catch (error)
     {
+        if (error instanceof Error)
         return {
             success: false,
             errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
@@ -497,7 +506,8 @@ export async function collect_data(client: Client, request: Request) {
 
                     workingUsers = Object.keys(allActivitiesUsersAndBuyers).length - workingBuyers;
                 }
-                catch (error: any) {
+                catch (error) {
+                    if (error instanceof Error)
                     errors.push({object:'WorkingUsers', error:('message' in error) ? error.message : 'general error'});
                 }
             })
