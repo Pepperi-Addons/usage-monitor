@@ -33,13 +33,12 @@ export async function get_relations_data(client: Client) {
     const relations = papiClient.addons.data.relations.iter({where: "RelationName='UsageMonitor'"});
 
     let relationsDataList: {
-        [key: string]: [
+        [key: string]: 
             {
                 Data: string,
                 Description: string,
                 Size: number
-            }
-        ]
+            }[]        
     }[] = [];
 
     let arrPromises: Promise<any>[] = [];
@@ -52,13 +51,24 @@ export async function get_relations_data(client: Client) {
             // "data" is an object containing a title and a list of objects. 
             // See https://apidesign.pepperi.com/add-ons/addons-link-table/relation-names/usage-monitor
             // Rearrange data from all external sources as a list of objects, each one has the title as key, and list of resources as value.
-            arrPromises.push(service.papiClient.get(url).then(data => relationsDataList.push({
+            arrPromises.push(service.papiClient.get(url).then(data => {
+
+                // Allow multiple relations to reside in the same tab (title)
+                let index = relationsDataList.map(x => Object.keys(x)[0]).indexOf(data.Title);
+                if (index > -1) {
+
+                    // Add resources to existing one in same tab
+                    relationsDataList[index][data.Title] = relationsDataList[index][data.Title].concat(data.Resources);
+                }
+                else {
+                    relationsDataList.push({
                 [data.Title]: data.Resources
-            }))
+                })}})
             .catch(error => console.error(`Error getting relation data from addon ${relation.AddonUUID} at url ${url}`)));
         }
-        catch (error: any)
+        catch (error)
         {
+            if (error instanceof Error)
             return {
                 success: false,
                 errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
