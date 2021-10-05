@@ -26,6 +26,27 @@ export async function mock_relation()
     }
 }
 
+export async function mock_relation2() {
+    return {
+        Title: "Mock Relation",
+        Resources: [
+            {Data: "Data 1", Description: "Description 1", Size: 1},
+            {Data: "Data 2", Description: "Description 2", Size: 2}
+        ]
+    }
+}
+
+export async function mock_relation3() {
+    return {
+        Title: "Mock Relation",
+        Resources: [
+            {Data: "Data 10", Description: "Description 10", Size: 10},
+            {Data: "Data 20", Description: "Description 20", Size: 20},
+            {Data: "Data 30", Description: "Description 30", Size: 30}
+        ]
+    }
+}
+
 export async function get_relations_data(client: Client) {
     const service = new MyService(client);
     const papiClient = service.papiClient;
