@@ -38,7 +38,7 @@ export async function mock_relation2() {
     }
 }
 
-// Hard coded data
+// Hard coded data - same title as in previous relations
 export async function mock_relation3() {
     return {
         Title: "Mock Relation",
@@ -46,6 +46,28 @@ export async function mock_relation3() {
             {Data: "Data 10", Description: "Description 10", Size: 10},
             {Data: "Data 20", Description: "Description 20", Size: 20},
             {Data: "Data 30", Description: "Description 30", Size: 30}
+        ]
+    }
+}
+
+// Relation data should be added to "Usage" tab
+export async function mock_relation4() {
+    return {
+        Title: "Usage",
+        Resources: [
+            {Data: "Usage 100", Description: "Description 100", Size: 100},
+            {Data: "Usage 200", Description: "Description 200", Size: 200}
+        ]
+    }
+}
+
+// Relation data should be added to "Data" tab
+export async function mock_relation5() {
+    return {
+        Title: "Data",
+        Resources: [
+            {Data: "Data 1000", Description: "Description 1000", Size: 1000},
+            {Data: "Data 2000", Description: "Description 2000", Size: 2000}
         ]
     }
 }
