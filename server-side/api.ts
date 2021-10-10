@@ -195,12 +195,15 @@ export async function get_all_data_for_key(client: Client, request: Request) {
             (a.ModificationDateTime !== undefined && b.ModificationDateTime !== undefined && a.ModificationDateTime > b.ModificationDateTime) ? 1 : -1);
 
         // Leave only the creation date and requested key/value from each object in array returned from table.
-        const all_data_for_key = sorted_all_data?.map((obj) => {
+        // Filter out the entries which do not have a value (undefined).
+        const all_data_for_key = sorted_all_data?.reduce((filtered, obj) => {
+            let objectValue = get_object_value(obj, requestedKey);
+            if (objectValue !== undefined) {
             let date: string = obj?.Key!.toString();
-            return {
-                [date]: get_object_value(obj, requestedKey)
-            };
-        });
+                filtered.push({[date]: objectValue});
+            }
+            return filtered;
+        }, []);
 
         return all_data_for_key;
     }
