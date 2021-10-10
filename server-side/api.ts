@@ -80,6 +80,13 @@ export async function get_relations_data(client: Client) {
 
     const relations = papiClient.addons.data.relations.iter({where: "RelationName='UsageMonitor'"});
 
+    let getRelationsResultObject = {
+        Data: [],
+        Usage: [],
+        Setup: [],
+        Relations: {}
+    };
+
     let relationsDataList: {
         [key: string]: 
             {
@@ -100,17 +107,22 @@ export async function get_relations_data(client: Client) {
             // Rearrange data from all external sources as a list of objects, each one has the title as key, and list of resources as value.
             arrPromises.push(service.papiClient.get(url).then(data => {
 
-                // Allow multiple relations to reside in the same tab (title)
-                let index = relationsDataList.map(x => Object.keys(x)[0]).indexOf(data.Title);
-                if (index > -1) {
-
-                    // Add resources to existing one in same tab
-                    relationsDataList[index][data.Title] = relationsDataList[index][data.Title].concat(data.Resources);
+                if (["Data", "Setup", "Usage"].includes(data.Title)) {
+                    getRelationsResultObject[data.Title] = getRelationsResultObject[data.Title].concat(data.Resources);
                 }
                 else {
-                    relationsDataList.push({
-                    [data.Title]: data.Resources
-                })}})
+                    // Allow multiple relations to reside in the same tab (title)
+                    let index = relationsDataList.map(x => Object.keys(x)[0]).indexOf(data.Title);
+                    if (index > -1) {
+
+                        // Add resources to existing one in same tab
+                        relationsDataList[index][data.Title] = relationsDataList[index][data.Title].concat(data.Resources);
+                    }
+                    else {
+                        relationsDataList.push({
+                        [data.Title]: data.Resources
+                    })}}
+                })
             .catch(error => console.error(`Error getting relation data from addon ${relation.AddonUUID} at url ${url}`)));
         }
         catch (error)
@@ -125,7 +137,14 @@ export async function get_relations_data(client: Client) {
 
     await Promise.all(arrPromises);
 
-    return relationsDataList;
+    // getRelationsResultObject.Usage = [
+    //     {Data: "AmirUsage1", Description: "AmirUsage1 Description1", Size: 17},
+    //     {Data: "AmirUsage2", Description: "AmirUsage2 Description2", Size: 36}
+    // ];
+
+    getRelationsResultObject.Relations = relationsDataList;
+
+    return getRelationsResultObject;
 }
 
 // Gets all data from adal
@@ -199,7 +218,7 @@ export async function get_all_data_for_key(client: Client, request: Request) {
         const all_data_for_key = sorted_all_data?.reduce((filtered, obj) => {
             let objectValue = get_object_value(obj, requestedKey);
             if (objectValue !== undefined) {
-            let date: string = obj?.Key!.toString();
+                let date: string = obj?.Key!.toString();
                 filtered.push({[date]: objectValue});
             }
             return filtered;
@@ -453,6 +472,9 @@ export async function collect_data(client: Client, request: Request) {
     let workingBuyers = 0;
 
     let relationsData: any = null;
+    let dataAdditionalRelations: any = null;
+    let usageAdditionalRelations: any = null;
+    let setupAdditionalRelations: any = null;
 
     await Promise.all([
         papiClient.users.count({include_deleted:false})
@@ -544,12 +566,17 @@ export async function collect_data(client: Client, request: Request) {
             })
             .catch(error => errors.push({object:'Buyers', error:('message' in error) ? error.message : 'general error'})),
         get_relations_data(client)
-            .then(x => relationsData = x)
+            .then(x => { 
+                relationsData = (x as any).Relations; 
+                dataAdditionalRelations = (x as any).Data;
+                usageAdditionalRelations = (x as any).Usage;
+                setupAdditionalRelations = (x as any).Setup;
+            })
             .catch(error => errors.push({object:'RelationsData', error:('message' in error) ? error.message : 'general error'}))
     ] as Promise<any>[])
 
     // Result object construction
-    const result = {
+    var result = {
         Setup: {},
         Usage: {},
         Data: {},
@@ -605,5 +632,16 @@ export async function collect_data(client: Client, request: Request) {
 
     console.log("Finished all calls for data, leaving.");
     
+    // Add additional data/setup/usage relations to result object
+    dataAdditionalRelations.forEach(element => {
+        result.Data[element.Data] = {Description: element.Description, Size: element.Size};
+    });
+    usageAdditionalRelations.forEach(element => {
+        result.Usage[element.Data] = {Description: element.Description, Size: element.Size};
+    });
+    setupAdditionalRelations.forEach(element => {
+        result.Setup[element.Data] = {Description: element.Description, Size: element.Size};
+    });
+
     return result;
 }
