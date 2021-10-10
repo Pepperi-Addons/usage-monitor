@@ -163,8 +163,15 @@ export class TypesListComponent implements OnInit {
         return Object.keys(jsonPortion).map(key => {
             const res = {Data:"", Description:"", Size:0, Prefix:""};
             res.Data = key; 
-            res.Description = key + "Description"; 
-            res.Size = jsonPortion[key];
+            let additionalData = jsonPortion[key];
+            if (typeof additionalData === 'object' && additionalData !== null) {
+                res.Description = additionalData.Description;
+                res.Size = additionalData.Size;
+            }
+            else {
+                res.Description = key + "Description"; 
+                res.Size = additionalData;
+            }
             res.Prefix = prefix;
             return res;
         });
@@ -209,7 +216,7 @@ export class TypesListComponent implements OnInit {
                             const receivedSize = Object.values(latest_data_received)[0];
 
                             var clonedArray = JSON.parse(JSON.stringify(this.latestDataArray));
-                            clonedArray[index].Size = receivedSize;
+                            clonedArray[index].Size = typeof receivedSize === 'object' && receivedSize !== null ? (receivedSize as any).Size : receivedSize;
                             this.latestDataArray = clonedArray;
                         }
                     },
