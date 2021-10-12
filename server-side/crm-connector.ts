@@ -95,7 +95,7 @@ export async function createPepperiUsage(clientSecret: string, inputObject: {}) 
 	console.log(`Record created with id: ${recordid}`);
 
 	var lastRecord = await crmConnector.getRecords("new_pepperiusages", "?$top=1&$orderby=createdon desc");
-	console.log(`Last record created: ${lastRecord}`);
+	console.log(`Last record created: ${JSON.stringify(lastRecord)}`);
 
 	return {
 		RecordID: recordid
