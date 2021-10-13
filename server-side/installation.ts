@@ -34,6 +34,7 @@ export async function install(client: Client, request: Request): Promise<any> {
             console.log('Settings table installed successfully.');
         }
         catch (err) {
+            if (err instanceof Error)
             return {
                 success: false,
                 errorMessage: ('message' in err) ? err.message : 'Could not install pepperi-usage. Settings table creation failed.',
@@ -61,6 +62,7 @@ export async function install(client: Client, request: Request): Promise<any> {
         };  
     }
     catch (err) {
+        if (err instanceof Error)
         return {
             success: false,
             errorMessage: ('message' in err) ? err.message : 'Cannot install pepperi-usage addon. Unknown error occured',
@@ -106,6 +108,7 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
         };
     }
     catch (err) {
+        if (err instanceof Error)
         return {
             success: false,
             errorMessage: ('message' in err) ? err.message : 'Failed to uninstall pepperi-usage addon',
@@ -142,6 +145,7 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
     }
     catch (err)
     {
+        if (err instanceof Error)
         return {
             success: true, // No need to fail upgrade
             errorMessage: ('message' in err) ? err.message : 'Failed to upgrade pepperi-usage addon',
@@ -180,6 +184,7 @@ async function InstallUsageMonitor(service){
             console.log(`Table ${UsageMonitorTable.Name} created successfully.`);
         }
         catch (err) {
+            if (err instanceof Error)
             retVal = {
                 success: false,
                 errorMessage: ('message' in err) ? err.message : 'Could not install pepperi-usage. Table creation failed.',
@@ -209,6 +214,7 @@ async function InstallUsageMonitor(service){
             }
             catch (err)
             {
+                if (err instanceof Error)
                 retVal = {
                     success: false,
                     errorMessage: ('message' in err) ? err.message : 'Could not install pepperi-usage. Code job creation failed.',
@@ -217,6 +223,7 @@ async function InstallUsageMonitor(service){
         }
     }
     catch (err) {
+        if (err instanceof Error)
         retVal = {
             success: false,
             errorMessage: ('message' in err) ? err.message : 'Cannot install pepperi-usage. Unknown error occured',
