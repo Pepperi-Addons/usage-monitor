@@ -126,17 +126,18 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
         console.log(`Addon version is ${addon?.Version}`);
         
         // Update code job to 10 retries instead of 30
-        if (version.length==3 && version[2] < 48) {
+        if (version.length==3 && version[2] <= 58) {
             console.log("About to get settings data...")
             const distributor = await service.GetDistributor(service.papiClient);
             const settingsData = await service.papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorSettings.Name).key(distributor.InternalID.toString()).get();
             const codeJobUUID = settingsData.Data.UsageMonitorCodeJobUUID;
-            console.log(`Got code job UUID ${codeJobUUID}, about to post it again with 10 retries instead of 30...`);
+            console.log(`Got code job UUID ${codeJobUUID}, about to post it again with 10 retries instead of 30 and also change its schedule to run only on Saturdays...`);
 
             const codeJob = await service.papiClient.codeJobs.upsert({
                 UUID: codeJobUUID,
                 CodeJobName: "Pepperi Usage Monitor",
-                NumberOfTries: 10
+                NumberOfTries: 10,
+                CronExpression: getCronExpression()
             });
 
             console.log("Successfully updated code job.")
@@ -235,12 +236,6 @@ async function InstallUsageMonitor(service){
 
 function getCronExpression() {
     let expressions = [
-        '0 19 * * FRI',
-        '0 20 * * FRI',
-        '0 21 * * FRI',
-        '0 22 * * FRI',
-        '0 23 * * FRI',
-        '0 0 * * SAT',
         '0 1 * * SAT',
         '0 2 * * SAT',
         '0 3 * * SAT',
@@ -262,13 +257,7 @@ function getCronExpression() {
         '0 19 * * SAT',
         '0 20 * * SAT',
         '0 21 * * SAT',
-        '0 22 * * SAT',
-        '0 23 * * SAT',
-        '0 0 * * SUN',
-        '0 1 * * SUN',
-        '0 2 * * SUN',
-        '0 3 * * SUN',
-        '0 4 * * SUN',        
+        '0 22 * * SAT'      
     ]
     const index = Math.floor(Math.random() * expressions.length);
     return expressions[index];
