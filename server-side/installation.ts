@@ -119,17 +119,18 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
 export async function upgrade(client: Client, request: Request): Promise<any> {
     try {
         const service = new MyService(client);
-        try{
-            await DeleteOldCodeJobs(service, client);
-        }
-        catch(err){
-            console.log("Failed to DeleteOldCodeJobs, continue. error = " + (err as {message:string}).message);
-        }
         console.log("About to get addon version...")
         let addon = await service.papiClient.addons.installedAddons.addonUUID(client.AddonUUID).get();
         const version = addon?.Version?.split('.').map(item => {return Number(item)}) || [];
         console.log(`Addon version is ${addon?.Version}`);
-        
+        if(version.length == 3 && version[2] <= 59){
+            try{
+                await DeleteOldCodeJobs(service, client);
+            }
+            catch(err){
+                console.log("Failed to DeleteOldCodeJobs, continue. error = " + (err as {message:string}).message);
+            }
+        }
         // Update code job to 10 retries instead of 30
         if (version.length==3 && version[2] <= 58) {
             console.log("About to get settings data...")
