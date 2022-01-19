@@ -11,6 +11,8 @@ The error Message is importent! it will be written in the audit log and help the
 import { PapiClient, CodeJob, AddonDataScheme } from "@pepperi-addons/papi-sdk";
 import { Client, Request } from '@pepperi-addons/debug-server'
 import MyService from './my.service';
+import Semver from "semver";
+
 
 export async function install(client: Client, request: Request): Promise<any> {
     try {
@@ -119,11 +121,8 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
 export async function upgrade(client: Client, request: Request): Promise<any> {
     try {
         const service = new MyService(client);
-        console.log("About to get addon version...")
-        let addon = await service.papiClient.addons.installedAddons.addonUUID(client.AddonUUID).get();
-        const version = addon?.Version?.split('.').map(item => {return Number(item)}) || [];
-        console.log(`Addon version is ${addon?.Version}`);
-        if(version.length == 3 && version[2] <= 59){
+        console.log(`Current Addon version is ${request.body.FromVersion}`);
+        if(Semver.lte(request.body.FromVersion, '1.0.59')){
             try{
                 await DeleteOldCodeJobs(service, client);
             }
@@ -132,7 +131,7 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
             }
         }
         // Update code job to 10 retries instead of 30
-        if (version.length==3 && version[2] <= 58) {
+        if (Semver.lte(request.body.FromVersion, '1.0.58')) {
             console.log("About to get settings data...")
             const distributor = await service.GetDistributor(service.papiClient);
             const settingsData = await service.papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorSettings.Name).key(distributor.InternalID.toString()).get();
