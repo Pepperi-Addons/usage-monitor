@@ -11,6 +11,8 @@ The error Message is importent! it will be written in the audit log and help the
 import { PapiClient, CodeJob, AddonDataScheme } from "@pepperi-addons/papi-sdk";
 import { Client, Request } from '@pepperi-addons/debug-server'
 import MyService from './my.service';
+import Semver from "semver";
+
 
 export async function install(client: Client, request: Request): Promise<any> {
     try {
@@ -72,7 +74,6 @@ export async function install(client: Client, request: Request): Promise<any> {
 
 export async function uninstall(client: Client, request: Request): Promise<any> {
     try {
-        client.AddonUUID = "00000000-0000-0000-0000-000000005a9e";
         const service = new MyService(client);
         const monitorSettings = await service.getMonitorSettings();
 
@@ -120,13 +121,17 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
 export async function upgrade(client: Client, request: Request): Promise<any> {
     try {
         const service = new MyService(client);
-        console.log("About to get addon version...")
-        let addon = await service.papiClient.addons.installedAddons.addonUUID(client.AddonUUID).get();
-        const version = addon?.Version?.split('.').map(item => {return Number(item)}) || [];
-        console.log(`Addon version is ${addon?.Version}`);
-        
+        console.log(`Current Addon version is ${request.body.FromVersion}`);
+        if(Semver.lte(request.body.FromVersion, '1.0.59')){
+            try{
+                await DeleteOldCodeJobs(service, client);
+            }
+            catch(err){
+                console.log("Failed to DeleteOldCodeJobs, continue. error = " + (err as {message:string}).message);
+            }
+        }
         // Update code job to 10 retries instead of 30
-        if (version.length==3 && version[2] <= 58) {
+        if (Semver.lte(request.body.FromVersion, '1.0.58')) {
             console.log("About to get settings data...")
             const distributor = await service.GetDistributor(service.papiClient);
             const settingsData = await service.papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorSettings.Name).key(distributor.InternalID.toString()).get();
@@ -261,4 +266,39 @@ function getCronExpression() {
     ]
     const index = Math.floor(Math.random() * expressions.length);
     return expressions[index];
+}
+
+// currentCodeJobUUID saved in UsageMonitorSettings table under Data.UsageMonitorCodeJobUUID property, all other codejobs need to be deleted
+async function DeleteOldCodeJobs(service: MyService, client: Client){
+    console.log("About to get settings data...")
+    const distributor = await service.GetDistributor(service.papiClient);
+    const settingsData = await service.papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorSettings.Name).key(distributor.InternalID.toString()).get();
+    const currentCodeJobUUID = settingsData.Data.UsageMonitorCodeJobUUID;
+    console.log(`Got current code job UUID ${currentCodeJobUUID}`);
+
+    console.log(`Going to extract old addon code jobs`);
+    const allDistCodeJobs = await service.papiClient.codeJobs.iter().toArray();
+    let addonCodeJobsUUIDs: Array<any> = [];
+
+    // select WHERE "AddonUUID" = '{client.AddonUUID}' AND "FunctionName" = 'run_collect_data' AND "IsScheduled" = true AND "CodeJobIsHidden" = false AND not current codejob
+    for (let i = 0; i < allDistCodeJobs.length; i++) {
+        if(allDistCodeJobs[i]['AddonUUID'] != null && allDistCodeJobs[i]['AddonUUID']?.toLowerCase() == client.AddonUUID.toLowerCase() && 
+        allDistCodeJobs[i]['FunctionName'] == 'run_collect_data' && allDistCodeJobs[i]['IsScheduled'] == true 
+        && allDistCodeJobs[i]['CodeJobIsHidden'] == false && allDistCodeJobs[i]['UUID']?.toLowerCase() != currentCodeJobUUID.toLowerCase()){
+            addonCodeJobsUUIDs.push(allDistCodeJobs[i].UUID);
+        }
+    }
+    console.log(`Got ${addonCodeJobsUUIDs.length} old code jobs`);
+
+    // delete codejob
+    console.log(`Going to delete ${addonCodeJobsUUIDs.length} old code jobs`);
+    for (let i = 0; i < addonCodeJobsUUIDs.length; i++) {
+        await service.papiClient.codeJobs.upsert({
+            UUID:addonCodeJobsUUIDs[i],
+            CodeJobName: "Pepperi Usage Monitor",
+            IsScheduled: false,
+            CodeJobIsHidden:true
+        });
+    }
+    console.log(`Finish deleting ${addonCodeJobsUUIDs.length} old code jobs`);
 }
