@@ -456,6 +456,8 @@ export async function collect_data(client: Client, request: Request) {
     let transactionLinesCount: any = null;
     let imagesCount: any = null;
     let userDefinedTablesLinesCount: any = null;
+    let usersObjects: any[] = [];
+
 
     // Working users/buyers created at least one new activity in all_activities in the last month.
     let lastMonth = new Date(Date.now());
@@ -477,12 +479,14 @@ export async function collect_data(client: Client, request: Request) {
     let setupAdditionalRelations: any = null;
 
     await Promise.all([
+        /*
         papiClient.users.count({include_deleted:false})
             .then(x => actualUsersCount = x)
             .catch(error => errors.push({object:'ActualUsers', error:('message' in error) ? error.message : 'general error'})),
         papiClient.users.count({include_deleted:false})
             .then(x => actualUsersCount = x)
             .catch(error => errors.push({object:'ActualUsers', error:('message' in error) ? error.message : 'general error'})),
+        */
         papiClient.accounts.count({include_deleted:false})
             .then(x => accountsCount = x)
             .catch(error => errors.push({object:'Accounts', error:('message' in error) ? error.message : 'general error'})),
@@ -557,7 +561,7 @@ export async function collect_data(client: Client, request: Request) {
                         allActivitiesUsersAndBuyers[buyerInternalID] && allActivitiesUsersAndBuyers[buyerInternalID] > 0 ? workingBuyers++ : null;
                     });
 
-                    workingUsers = Object.keys(allActivitiesUsersAndBuyers).length - workingBuyers;
+                    //workingUsers = Object.keys(allActivitiesUsersAndBuyers).length - workingBuyers;
                 }
                 catch (error) {
                     if (error instanceof Error)
@@ -565,6 +569,31 @@ export async function collect_data(client: Client, request: Request) {
                 }
             })
             .catch(error => errors.push({object:'Buyers', error:('message' in error) ? error.message : 'general error'})),
+
+        //for working users calculation
+        papiClient.users.iter({include_deleted:false}).toArray()
+            .then(async x => {
+                usersObjects = x;
+                actualUsersCount = x.length;
+                // Iterate all working users and buyers, get which ones are users.
+                try {
+                    // The following code dependes on both allActivitiesUsersAndBuyersTask and users tasks:
+                    const allActivitiesUsersAndBuyers = await allActivitiesUsersAndBuyersTask;
+
+                    // Iterate usersObject, see which ones appear in allActivitiesUsersAndBuyers to get the number of working users.
+                    usersObjects.forEach(userObject => {
+                        const userInternalID = userObject['InternalID'] as number;
+                        allActivitiesUsersAndBuyers[userInternalID] && allActivitiesUsersAndBuyers[userInternalID] > 0 ? workingUsers++ : null;
+
+                    });
+                }
+                catch (error) {
+                    if (error instanceof Error)
+                    errors.push({object:'WorkingUsers', error:('message' in error) ? error.message : 'general error'});
+                }
+            })
+            .catch(error => errors.push({object:'ActualUsers', error:('message' in error) ? error.message : 'general error'})),     
+
         get_relations_data(client)
             .then(x => { 
                 relationsData = (x as any).Relations; 
