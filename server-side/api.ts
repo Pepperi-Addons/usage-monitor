@@ -4,7 +4,10 @@ import { UsageMonitorTable } from './installation'
 import { createPepperiUsage } from './crm-connector'
 import { get } from 'lodash';
 
+
+
 // Random data
+    
 export async function mock_relation()
 {
     let randTitle = Math.floor(Math.random() * 100);
@@ -469,14 +472,23 @@ export async function collect_data(client: Client, request: Request) {
     const lastMonthStringWithoutTime = lastMonthString.split('T')[0] + 'Z';
     const allActivitiesUsersAndBuyersTask = papiClient.allActivities.count({where:"CreationDateTime>'" + lastMonthStringWithoutTime + "'", group_by:"CreatorInternalID"})
         .catch(error => errors.push({object:'AllActivitiesUsersAndBuyers', error:('message' in error) ? error.message : 'general error'}));
+
+    let TotalMonthlyActivitiesAndTransactions:number=0;
+    
     
     let workingUsers = 0;
     let workingBuyers = 0;
+    let MonthlyBuyersResult:Number=0;
+    let MonthlyUsersResult:Number=0;
+
 
     let relationsData: any = null;
     let dataAdditionalRelations: any = null;
     let usageAdditionalRelations: any = null;
     let setupAdditionalRelations: any = null;
+    
+    
+    
 
     await Promise.all([
         /*
@@ -487,6 +499,8 @@ export async function collect_data(client: Client, request: Request) {
             .then(x => actualUsersCount = x)
             .catch(error => errors.push({object:'ActualUsers', error:('message' in error) ? error.message : 'general error'})),
         */
+        papiClient.allActivities.iter({include_deleted:false, where:"CreationDateTime>'" + lastMonthStringWithoutTime + "'"}).toArray()
+            .then(x => TotalMonthlyActivitiesAndTransactions = x.length),
         papiClient.accounts.count({include_deleted:false})
             .then(x => accountsCount = x)
             .catch(error => errors.push({object:'Accounts', error:('message' in error) ? error.message : 'general error'})),
@@ -556,9 +570,13 @@ export async function collect_data(client: Client, request: Request) {
                     const allActivitiesUsersAndBuyers = await allActivitiesUsersAndBuyersTask;
 
                     // Iterate buyersObject, see which ones appear in allActivitiesUsersAndBuyers to get the number of working buyers (the rest are working users).
+                    //get the number of activity and transactions created by buyers.
                     buyersObjects.forEach(buyerObject => {
                         const buyerInternalID = buyerObject['InternalID'] as number;
-                        allActivitiesUsersAndBuyers[buyerInternalID] && allActivitiesUsersAndBuyers[buyerInternalID] > 0 ? workingBuyers++ : null;
+                        if(allActivitiesUsersAndBuyers[buyerInternalID] && allActivitiesUsersAndBuyers[buyerInternalID] > 0){
+                            MonthlyBuyersResult+=allActivitiesUsersAndBuyers[buyerInternalID];;
+                            workingBuyers++;
+                        }
                     });
 
                     //workingUsers = Object.keys(allActivitiesUsersAndBuyers).length - workingBuyers;
@@ -581,10 +599,13 @@ export async function collect_data(client: Client, request: Request) {
                     const allActivitiesUsersAndBuyers = await allActivitiesUsersAndBuyersTask;
 
                     // Iterate usersObject, see which ones appear in allActivitiesUsersAndBuyers to get the number of working users.
+                    //get the number of activity and transactions created by users.
                     usersObjects.forEach(userObject => {
                         const userInternalID = userObject['InternalID'] as number;
-                        allActivitiesUsersAndBuyers[userInternalID] && allActivitiesUsersAndBuyers[userInternalID] > 0 ? workingUsers++ : null;
-
+                        if(allActivitiesUsersAndBuyers[userInternalID] && allActivitiesUsersAndBuyers[userInternalID] > 0){
+                            MonthlyUsersResult+=allActivitiesUsersAndBuyers[userInternalID] ;
+                            workingUsers++;
+                        }
                     });
                 }
                 catch (error) {
@@ -619,7 +640,8 @@ export async function collect_data(client: Client, request: Request) {
         DistributorUUID: distributorDataUUID,
         DistributorInternalID: distributorDataInternalID,
         distributorName: distributorDataName,
-        distributorAccountingStatus: distributorDataAccountingStatus
+        distributorAccountingStatus: distributorDataAccountingStatus,
+        MonthlyUsage:{}
     };
     result.Setup = {
         Profiles: profilesCount,
@@ -655,6 +677,14 @@ export async function collect_data(client: Client, request: Request) {
         UserDefinedTables: userDefinedTablesCount,
         UserDefinedTablesLines: userDefinedTablesLinesCount,
         Attachments: null
+
+    }
+
+    result.MonthlyUsage= {
+        MonthlyBuyersUsage: MonthlyBuyersResult,
+        MonthlyUsersUsage: MonthlyUsersResult,
+        Total_Monthly_new_Activities_and_transaction: TotalMonthlyActivitiesAndTransactions
+
     }
 
     result.Errors = errors;
