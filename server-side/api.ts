@@ -5,7 +5,6 @@ import { createPepperiUsage } from './crm-connector'
 import { get } from 'lodash';
 
 
-
 // Random data
     
 export async function mock_relation()
@@ -87,6 +86,7 @@ export async function get_relations_data(client: Client) {
         Data: [],
         Usage: [],
         Setup: [],
+        MonthlyUsage:[],
         Relations: {}
     };
 
@@ -110,7 +110,7 @@ export async function get_relations_data(client: Client) {
             // Rearrange data from all external sources as a list of objects, each one has the title as key, and list of resources as value.
             arrPromises.push(service.papiClient.get(url).then(data => {
 
-                if (["Data", "Setup", "Usage"].includes(data.Title)) {
+                if (["Data", "Setup", "Usage", "MonthlyUsage"].includes(data.Title)) {
                     getRelationsResultObject[data.Title] = getRelationsResultObject[data.Title].concat(data.Resources);
                 }
                 else {
@@ -466,29 +466,29 @@ export async function collect_data(client: Client, request: Request) {
     let lastMonth = new Date(Date.now());
     lastMonth.setMonth(lastMonth.getMonth() - 1);
     const lastMonthString = lastMonth.toISOString();
+    let TotalMonthlyActivitiesAndTransactions:any=0;
 
+    let allActivities={};
     // Hack: shorten ISO format, remove the time. This is b/c papi cannot parse ISO string with decimal point for seconds.
     // See: https://pepperi.atlassian.net/browse/DI-18019
     const lastMonthStringWithoutTime = lastMonthString.split('T')[0] + 'Z';
-    const allActivitiesUsersAndBuyersTask = papiClient.allActivities.count({where:"CreationDateTime>'" + lastMonthStringWithoutTime + "'", group_by:"CreatorInternalID"})
+    const allActivitiesUsersAndBuyersTask:any =  papiClient.allActivities.count({where:"CreationDateTime>'" + lastMonthStringWithoutTime + "'", group_by:"CreatorInternalID"})
         .catch(error => errors.push({object:'AllActivitiesUsersAndBuyers', error:('message' in error) ? error.message : 'general error'}));
 
-    let TotalMonthlyActivitiesAndTransactions:number=0;
     
     
     let workingUsers = 0;
     let workingBuyers = 0;
-    let MonthlyBuyersResult:Number=0;
-    let MonthlyUsersResult:Number=0;
+    let MonthlyActivitiesAndTransactionsByBuyers:Number=0;
+    let MonthlyActivitiesAndTransactionsByUsers:Number=0;
 
 
     let relationsData: any = null;
     let dataAdditionalRelations: any = null;
     let usageAdditionalRelations: any = null;
     let setupAdditionalRelations: any = null;
-    
-    
-    
+    let monthlyUsageAdditionalRelations: any = null;
+
 
     await Promise.all([
         /*
@@ -499,8 +499,7 @@ export async function collect_data(client: Client, request: Request) {
             .then(x => actualUsersCount = x)
             .catch(error => errors.push({object:'ActualUsers', error:('message' in error) ? error.message : 'general error'})),
         */
-        papiClient.allActivities.iter({include_deleted:false, where:"CreationDateTime>'" + lastMonthStringWithoutTime + "'"}).toArray()
-            .then(x => TotalMonthlyActivitiesAndTransactions = x.length),
+        
         papiClient.accounts.count({include_deleted:false})
             .then(x => accountsCount = x)
             .catch(error => errors.push({object:'Accounts', error:('message' in error) ? error.message : 'general error'})),
@@ -568,13 +567,18 @@ export async function collect_data(client: Client, request: Request) {
 
                     // The following code dependes on both allActivitiesUsersAndBuyersTask and buyers tasks:
                     const allActivitiesUsersAndBuyers = await allActivitiesUsersAndBuyersTask;
+                    for(let key in allActivitiesUsersAndBuyers){
+                        let value= allActivitiesUsersAndBuyers[key];
+                        TotalMonthlyActivitiesAndTransactions+= value;
+                    }
+
 
                     // Iterate buyersObject, see which ones appear in allActivitiesUsersAndBuyers to get the number of working buyers (the rest are working users).
                     //get the number of activity and transactions created by buyers.
                     buyersObjects.forEach(buyerObject => {
                         const buyerInternalID = buyerObject['InternalID'] as number;
                         if(allActivitiesUsersAndBuyers[buyerInternalID] && allActivitiesUsersAndBuyers[buyerInternalID] > 0){
-                            MonthlyBuyersResult+=allActivitiesUsersAndBuyers[buyerInternalID];;
+                            MonthlyActivitiesAndTransactionsByBuyers+=allActivitiesUsersAndBuyers[buyerInternalID];;
                             workingBuyers++;
                         }
                     });
@@ -603,7 +607,7 @@ export async function collect_data(client: Client, request: Request) {
                     usersObjects.forEach(userObject => {
                         const userInternalID = userObject['InternalID'] as number;
                         if(allActivitiesUsersAndBuyers[userInternalID] && allActivitiesUsersAndBuyers[userInternalID] > 0){
-                            MonthlyUsersResult+=allActivitiesUsersAndBuyers[userInternalID] ;
+                            MonthlyActivitiesAndTransactionsByUsers+=allActivitiesUsersAndBuyers[userInternalID] ;
                             workingUsers++;
                         }
                     });
@@ -621,6 +625,9 @@ export async function collect_data(client: Client, request: Request) {
                 dataAdditionalRelations = (x as any).Data;
                 usageAdditionalRelations = (x as any).Usage;
                 setupAdditionalRelations = (x as any).Setup;
+                monthlyUsageAdditionalRelations = (x as any).MonthlyUsage;
+
+                
             })
             .catch(error => errors.push({object:'RelationsData', error:('message' in error) ? error.message : 'general error'}))
     ] as Promise<any>[])
@@ -681,8 +688,8 @@ export async function collect_data(client: Client, request: Request) {
     }
 
     result.MonthlyUsage= {
-        MonthlyBuyersUsage: MonthlyBuyersResult,
-        MonthlyUsersUsage: MonthlyUsersResult,
+        MonthlyBuyersUsage: MonthlyActivitiesAndTransactionsByBuyers,
+        MonthlyUsersUsage: MonthlyActivitiesAndTransactionsByUsers,
         Total_Monthly_new_Activities_and_transaction: TotalMonthlyActivitiesAndTransactions
 
     }
@@ -700,6 +707,9 @@ export async function collect_data(client: Client, request: Request) {
     });
     setupAdditionalRelations.forEach(element => {
         result.Setup[element.Data] = {Description: element.Description, Size: element.Size};
+    });
+    monthlyUsageAdditionalRelations.forEach(element => {
+        result.MonthlyUsage[element.Data] = {Description: element.Description, Size: element.Size};
     });
 
     return result;
