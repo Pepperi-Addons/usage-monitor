@@ -36,9 +36,12 @@
             <mat-tab  id="3" label="{{'SetupTabHeader' | translate}}">
                 <addon-pepperi-list-exmaple [type]="'Setup'" [ID]='2' [isActive]="activeTabIndex === 2" [data]="activeTabIndex === 2 ? currentData : null"></addon-pepperi-list-exmaple>
             </mat-tab>
+            <mat-tab  id="4" label="{{'MonthlyUsageTabHeader' | translate}}">
+                <addon-pepperi-list-exmaple [type]="'MonthlyUsage'" [ID]='3' [isActive]="activeTabIndex === 3" [data]="activeTabIndex === 3 ? currentData : null"></addon-pepperi-list-exmaple>
+            </mat-tab>
 
             <mat-tab *ngFor="let tab of relationsData; let index = index" [label]="getRelationDataTabLabel(tab)">
-                <addon-pepperi-list-exmaple [type]="'Relation'" [ID]=index+3 [isActive]="activeTabIndex === index+3" [relationsData]="activeTabIndex === index+3 ? tab : null"></addon-pepperi-list-exmaple>
+                <addon-pepperi-list-exmaple [type]="'Relation'" [ID]=index+4 [isActive]="activeTabIndex === index+4" [relationsData]="activeTabIndex === index+4 ? tab : null"></addon-pepperi-list-exmaple>
               </mat-tab>
 
         </mat-tab-group>

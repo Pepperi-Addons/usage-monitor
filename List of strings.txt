@@ -1,5 +1,13 @@
 {
     "SetupTabHeader":"Setup",
+    "MonthlyUsageTabHeader":"MonthlyUsage",
+    "MonthlyBuyersUsage": "Monthly Buyers Usage",
+    "MonthlyUsersUsage": "Monthly Users Usage",
+    "Total_Monthly_new_Activities_and_transaction": "Total Monthly new Activities and transaction",
+    "MonthlyBuyersUsageDescription": "Activities and Transaction created by buyers in previous calendar month",
+    "MonthlyUsersUsageDescription": "Activities and Transaction created by users in previous calendar month",
+    "Total_Monthly_new_Activities_and_transactionDescription": "Activities and Transaction created by All users and API  in previous calendar month",
+
     "LicensedUsers":"Licensed Users",
     "LicensedUsersDescription":"Max number of users allocated a license",
     "ActualUsers":"Actual Users",
