@@ -5,6 +5,49 @@ import { createPepperiUsage } from './crm-connector'
 import { get } from 'lodash';
 
 
+export async function insert_Relation(client:Client, request:Request){
+    const service = new MyService(client);
+    const papiClient = service.papiClient;
+    const relations = papiClient.addons.data.relations.iter({where: "RelationName='UsageMonitor'"});
+    let ExpriationDateTime: Date= new Date(new Date().setFullYear(new Date().getFullYear() + 1));
+
+    for await (const relation of relations)
+    {
+        let UUID:string= GenerateGuid();
+
+        const url = `/addons/api/${relation.AddonUUID}${relation.AddonRelativeURL?.startsWith('/') ? relation.AddonRelativeURL : '/' + relation.AddonRelativeURL}`;
+        let getRelationData= await service.papiClient.get(url);
+        let title= getRelationData["Title"];
+        let resource= getRelationData["Resources"];
+        let AddonUUID_RelationName= relation.AddonUUID;
+        let RelationData= {
+            Title: title,
+            Resources:[
+                resource]
+        }
+        
+        let insertRelation= {
+            Key: UUID,
+            AddonUUID_RelationName: AddonUUID_RelationName,
+            ExpriationDateTime: ExpriationDateTime,
+            RelationData: RelationData
+        }
+        
+        await service.papiClient.addons.data.uuid(client.AddonUUID).table('UsageMonitorDaily').upsert(insertRelation);
+
+    }
+
+}
+
+//for generating a new UUID
+function GenerateGuid() {
+    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function (c) {
+        let r = Math.random() * 16 | 0, v = c == 'x' ? r : (r & 0x3 | 0x8);
+        return v.toString(16);
+    });
+}
+
+
 // Random data
     
 export async function mock_relation()
