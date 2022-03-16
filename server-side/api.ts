@@ -5,7 +5,7 @@ import { createPepperiUsage } from './crm-connector'
 import { get } from 'lodash';
 
 
-export async function insert_Relation(client:Client, request:Request){
+export async function get_relations_daily_data(client:Client, request:Request){
     const service = new MyService(client);
     const papiClient = service.papiClient;
     const relations = papiClient.addons.data.relations.iter({where: "RelationName='UsageMonitor'"});
@@ -19,7 +19,7 @@ export async function insert_Relation(client:Client, request:Request){
         let getRelationData= await service.papiClient.get(url);
         let title= getRelationData["Title"];
         let resource= getRelationData["Resources"];
-        let AddonUUID_RelationName= relation.AddonUUID;
+        let AddonUUID_RelationName= relation.AddonUUID+"_"+relation["Name"];
         let RelationData= {
             Title: title,
             Resources:[
