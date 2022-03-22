@@ -7,12 +7,11 @@ If the result of your code is 'false' then return:
 {success:false, erroeMessage:{the reason why it is false}}
 The error Message is importent! it will be written in the audit log and help the user to understand what happen
 */
-
 import { PapiClient, CodeJob, AddonDataScheme } from "@pepperi-addons/papi-sdk";
 import { Client, Request } from '@pepperi-addons/debug-server'
 import MyService from './my.service';
 import Semver from "semver";
-
+import jwtDecode from "jwt-decode";
 
 export async function install(client: Client, request: Request): Promise<any> {
     try {
@@ -34,19 +33,34 @@ export async function install(client: Client, request: Request): Promise<any> {
             console.log(`About to create settings table ${UsageMonitorSettings.Name}...`)
             const UsageMonitorSettingsResponse = await service.papiClient.addons.data.schemes.post(UsageMonitorSettings);            
             console.log('Settings table installed successfully.');
+
+            //creating daily usage table
+            console.log(`About to create table ${UsageMonitorDaily.Name}...`);
+            await service.papiClient.addons.data.schemes.post(UsageMonitorDaily);
+            console.log(`Table ${UsageMonitorDaily.Name} created successfully.`);
         }
         catch (err) {
             if (err instanceof Error)
             return {
                 success: false,
-                errorMessage: ('message' in err) ? err.message : 'Could not install pepperi-usage. Settings table creation failed.',
+                errorMessage: ('message' in err) ? err.message : 'Could not install pepperi-usage and pepperi-daily. Settings and Daily table creation failed.',
             }
         }
+
+        //creating a daily code job
+        let dailyRetValUsageMonitor = await DailyCodeJob(service);
+        if (!dailyRetValUsageMonitor.success) {
+            console.error("pepperi-usage-daily installation failed on: " + dailyRetValUsageMonitor.errorMessage);
+            return dailyRetValUsageMonitor;
+        }
+        console.log('Pepperi Usage addon table and code job installation succeeded.');
 
         const data = {};
         const distributor = await service.GetDistributor(service.papiClient);
         data["Name"] = distributor.Name;
         data[retValUsageMonitor["codeJobName"]] = retValUsageMonitor["codeJobUUID"];
+        data[dailyRetValUsageMonitor["dailyCodeJobName"]] = dailyRetValUsageMonitor["dailyCodeJobUUID"];
+
 
         // Add code job info to settings table.
         const settingsBodyADAL= {
@@ -90,6 +104,19 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
         }
         console.log('pepperi-usage codejob unschedule succeeded.');
 
+        // unschedule DailyUsageMonitor
+        console.log("About to remove code job Pepperi daily Usage Monitor...");
+        let DailyUsageMonitorCodeJobUUID = monitorSettings.dailyCodeJobUUID;
+        if(DailyUsageMonitorCodeJobUUID != '') {
+            await service.papiClient.codeJobs.upsert({
+                UUID:UsageMonitorCodeJobUUID,
+                CodeJobName: "Pepperi Daily Usage Monitor",
+                IsScheduled: false,
+                CodeJobIsHidden:true
+            });
+        }
+        console.log('pepperi-daily-usage codejob unschedule succeeded.');
+
         // purge ADAL tables
         var headersADAL = {
             "X-Pepperi-OwnerID": client.AddonUUID,
@@ -99,6 +126,8 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
         console.log("About to purge tables UsageMonitor and UsageMonitorSettings...")
         const responseUsageMonitorTable = await service.papiClient.post('/addons/data/schemes/UsageMonitor/purge', null, headersADAL);
         const responseSettingsTable = await service.papiClient.post('/addons/data/schemes/UsageMonitorSettings/purge', null, headersADAL);
+        const responseDailyUsageMonitorTable = await service.papiClient.post('/addons/data/schemes/UsageMonitorDaily/purge', null, headersADAL);
+
 
         console.log('pepperi-usage uninstallation succeeded.');
 
@@ -121,6 +150,25 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
 export async function upgrade(client: Client, request: Request): Promise<any> {
     try {
         const service = new MyService(client);
+
+
+        //creating daily usage table
+        try {
+            console.log(`About to create table ${UsageMonitorDaily.Name}...`);
+            await service.papiClient.addons.data.schemes.post(UsageMonitorDaily);
+            console.log(`Table ${UsageMonitorDaily.Name} created successfully.`);
+        }
+        catch (err) {
+            console.log("error"+err);
+        }
+
+        //creating code job for daily usage
+        const monitorSettings = await service.getMonitorSettings();
+        let DailyUsageMonitorCodeJobUUID = monitorSettings.dailyCodeJobUUID;
+        if(DailyUsageMonitorCodeJobUUID != '') {
+            DailyCodeJob(service);
+        }
+
         console.log(`Current Addon version is ${request.body.FromVersion}`);
         if(Semver.lte(request.body.FromVersion, '1.0.59')){
             try{
@@ -148,6 +196,24 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
             console.log("Successfully updated code job.")
             console.log("Successfully upgraded addon to new version.")
         }
+
+        // Update code job to work on a different scheduling
+        if(Semver.lte(request.body.FromVersion, 'TBD')){
+            console.log("About to get settings data...")
+            const distributor = await service.GetDistributor(service.papiClient);
+            const settingsData = await service.papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorSettings.Name).key(distributor.InternalID.toString()).get();
+            const codeJobUUID = settingsData.Data.UsageMonitorCodeJobUUID;
+            console.log(`Got code job UUID ${codeJobUUID}, about to post it again with a different scheduling- run between 21:00- 02:00...`);
+
+            const codeJob = await service.papiClient.codeJobs.upsert({
+                UUID: codeJobUUID,
+                CodeJobName: "Pepperi Usage Monitor",
+                CronExpression: getCronExpression2(client.OAuthAccessToken)
+            });
+
+            console.log("Successfully updated code job.");
+            console.log("Successfully upgraded addon to new version.");
+        }
     }
     catch (err)
     {
@@ -166,6 +232,32 @@ export async function downgrade(client: Client, request: Request): Promise<any> 
     return {success:true,resultObject:{}}
 }
 
+const UsageMonitorDaily:AddonDataScheme = {
+    Name: 'UsageMonitorDaily',
+    Type: 'indexed_data',
+    Fields: {
+        UUID:{
+            Type:'String'
+        },
+        AddonUUID_RelationName:{
+            Type: 'String',
+            Indexed: true
+        },
+        CreationDateTime:{
+            Type: 'Date'
+        },
+        ExpriationDateTime:{
+            Type:'Date'
+        },
+        RelationData:{
+            Type:'String'
+        }
+        
+    } as any
+    
+
+}
+
 const UsageMonitorSettings:AddonDataScheme = {
     Name: 'UsageMonitorSettings',
     Type: 'meta_data'
@@ -174,6 +266,56 @@ const UsageMonitorSettings:AddonDataScheme = {
 export const UsageMonitorTable:AddonDataScheme = {
     Name: "UsageMonitor",
     Type: "data"
+}
+
+async function DailyCodeJob(service){
+    let retVal = {
+        success: true,
+        errorMessage: ''
+    };
+
+    try {
+        if (retVal.success)
+        {
+            try {
+                //creating daily codeJob
+                console.log("About to create code job Pepperi Usage Monitor...");
+                const DailyCodeJob = await service.papiClient.codeJobs.upsert({
+                    CodeJobName: "Pepperi Daily Usage Monitor",
+                    Description: "Pepperi Daily Usage Monitor",
+                    Type: "AddonJob",
+                    IsScheduled: true,
+                    CronExpression: GetDailyAddonUsageCronExpression(service.client.OAuthAccessToken),
+                    AddonPath: "api",
+                    FunctionName: "get_relations_daily_data",
+                    AddonUUID: service.client.AddonUUID,
+                    NumberOfTries: 3,
+                });
+                console.log("Code job Pepperi Usage Monitor created successfully.");
+                retVal["dailyCodeJobName"]= 'DailyUsageMonitorCodeJobUUID';
+                retVal["dailyCodeJobUUID"]= DailyCodeJob.UUID;
+
+            }
+            catch (err)
+            {
+                if (err instanceof Error)
+                retVal = {
+                    success: false,
+                    errorMessage: ('message' in err) ? err.message : 'Could not install pepperi-usage. Code job creation failed.',
+                }
+            }
+        }
+    }
+    catch (err) {
+        if (err instanceof Error)
+        retVal = {
+            success: false,
+            errorMessage: ('message' in err) ? err.message : 'Cannot install pepperi-usage. Unknown error occured',
+        };
+    }
+
+    return retVal;
+
 }
 
 async function InstallUsageMonitor(service){
@@ -239,6 +381,18 @@ async function InstallUsageMonitor(service){
     return retVal;
 }
 
+function GetDailyAddonUsageCronExpression(token) {
+    // rand is integer between 0-4 included.
+    const rand = (jwtDecode(token)['pepperi.distributorid']) % 59;
+    let expressions = [
+        rand + "-59/60 23 * * *",
+        rand + "-59/60 0 * * *",
+        rand + "-59/60 1 * * *" 
+    ]
+    const index = Math.floor(Math.random() * expressions.length);
+    return expressions[index];
+}
+
 function getCronExpression() {
     let expressions = [
         '0 1 * * SAT',
@@ -263,6 +417,21 @@ function getCronExpression() {
         '0 20 * * SAT',
         '0 21 * * SAT',
         '0 22 * * SAT'      
+    ]
+    const index = Math.floor(Math.random() * expressions.length);
+    return expressions[index];
+}
+
+function getCronExpression2(token) {
+    const rand = (jwtDecode(token)['pepperi.distributorid']) % 59;
+    let expressions = [
+        rand + "-59/60 21 * * *",
+        rand + "-59/60 22 * * *",
+        rand + "-59/60 23 * * *",
+        rand + "-59/60 0 * * *",
+        rand + "-59/60 1 * * *" ,
+        rand + "-59/60 2 * * *" 
+
     ]
     const index = Math.floor(Math.random() * expressions.length);
     return expressions[index];
