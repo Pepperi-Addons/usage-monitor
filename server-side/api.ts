@@ -123,6 +123,124 @@ export async function get_relations_data(client: Client) {
     const service = new MyService(client);
     const papiClient = service.papiClient;
 
+    let getRelationsResultObject = {
+        Data: [],
+        Usage: [],
+        Setup: [],
+        MonthlyUsage:[],
+        Relations: {}
+    };
+
+    let relationsDataList: {
+        [key: string]: 
+            {
+                Data: string,
+                Description: string,
+                Size: number
+            }[]        
+    }[] = [];
+    
+    await service.papiClient.addons.data.relations.iter({where:'RelationName=UsageMonitor'}).toArray()
+    .then(async x => {
+        let usageRelation = x;
+        for(let index=0;index<usageRelation.length;index++){
+            //If reporting period is weekly
+            if((usageRelation[index]['ReportingPeriod']== "Weekly" || (!usageRelation[index]['ReportingPeriod']) ) ){
+                //If Aggregation Function is sum, sum all data from last week.
+                if(usageRelation[index]['AggregationFunction']== "SUM"){
+                    let sum:number=0;
+                    let id= usageRelation[index]['AddonUUID']+"_"+usageRelation[index]["Name"];
+
+                    //checking for a span of a week
+                    let startTime:Date= new Date();
+                    let endTime:Date= new Date();
+                    startTime.setDate(startTime.getDate() -8);
+                    endTime.setDate(endTime.getDate()-1);
+                    const startTimeString = startTime.toISOString();
+                    const endTimeString = endTime.toISOString();
+
+                    let dateCheck: string= "CreationDateTime>="+ startTimeString+" and CreationDateTime<="+ endTimeString;
+                            
+                    const usageMonitorUUID:string=client.AddonUUID;
+                    const dailyUsageTable:string= 'UsageMonitorDaily';
+
+                    let Params: string= `where=AddonUUID_RelationName='${id}'&${dateCheck}&order_by=CreationDateTime DESC`;
+                    const Url:string = `${usageMonitorUUID}/${dailyUsageTable}/${'?'+ Params}`;
+                    const Result= await papiClient.get(`/addons/data/${Url}`);
+                    for(let i=0; i<Result[0]['RelationData']['Resources'][0].length; i++){
+                        sum= aggregateData(Result, i);
+                        Result[0]['RelationData']['Resources'][0][i]['Size']= sum;
+                    }
+                    insert_Relation(Result[0]['RelationData'], getRelationsResultObject, relationsDataList);
+                }
+                
+                //If Aggregation Function is last, take the latest data that was inserted to the table.
+                if(usageRelation[index]['AggregationFunction']== "LAST" || (!usageRelation[index]['AggregationFunction']) ){
+                    let id= usageRelation[index]['AddonUUID']+"_"+usageRelation[index]["Name"];
+        
+                    let Params: string= `where=AddonUUID_RelationName='${id}'&order_by=CreationDateTime DESC`;
+                    const usageMonitorUUID:string=client.AddonUUID;
+                    const dailyUsageTable:string= 'UsageMonitorDaily';
+                    const Url:string = `${usageMonitorUUID}/${dailyUsageTable}/${'?'+ Params}`;
+                    const Result= await papiClient.get(`/addons/data/${Url}`);
+                    let lastData= Result[0]['RelationData'];
+                    insert_Relation(lastData, getRelationsResultObject, relationsDataList);
+                }
+            }
+        } 
+    })
+    getRelationsResultObject.Relations=relationsDataList;
+    return getRelationsResultObject;
+
+}
+
+//Sum all of the data from the relevant field.
+function aggregateData(Result, i){
+    let sum=0;
+    for(let index=0;index<7;index++){
+        sum+=Result[index]['RelationData']['Resources'][0][i]['Size'];
+    }
+    return sum;
+}
+
+//insert the relation to getRelationsResultObject table
+function insert_Relation(resource, getRelationsResultObject, relationsDataList){
+    
+    try {
+            if (["Data", "Setup", "Usage", "MonthlyUsage"].includes(resource.Title)) {
+                getRelationsResultObject[resource.Title] = getRelationsResultObject[resource.Title].concat(resource.Resources[0]);
+            }
+            else {
+                // Allow multiple relations to reside in the same tab (title)
+                let index = relationsDataList.map(x => Object.keys(x)[0]).indexOf(resource.Title);
+                if (index > -1) {
+
+                    // Add resources to existing one in same tab
+                    relationsDataList[index][resource.Title] = relationsDataList[index][resource.Title].concat(resource.Resources[0]);
+                }
+                else {
+                    relationsDataList.push({
+                    [resource.Title]: resource.Resources[0]
+                })}}
+           }
+    catch (error)
+    {
+        if (error instanceof Error)
+        return {
+            success: false,
+            errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
+        }
+    }
+
+}
+
+/*
+// Gets all data from relations posted to usage monitor. 
+// See https://apidesign.pepperi.com/add-ons/addons-link-table/relation-names/usage-monitor
+export async function get_relations_data1(client: Client) {
+    const service = new MyService(client);
+    const papiClient = service.papiClient;
+
     const relations = papiClient.addons.data.relations.iter({where: "RelationName='UsageMonitor'"});
 
     let getRelationsResultObject = {
@@ -192,6 +310,7 @@ export async function get_relations_data(client: Client) {
 
     return getRelationsResultObject;
 }
+*/
 
 // Gets all data from adal
 async function get_all_data_internal(client: Client) {
