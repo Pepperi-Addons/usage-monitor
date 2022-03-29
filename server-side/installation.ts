@@ -21,7 +21,7 @@ export async function install(client: Client, request: Request): Promise<any> {
         const service = new MyService(client);
 
         // install UsageMonitor code job
-        let retValUsageMonitor = await InstallUsageMonitor(service);
+        let retValUsageMonitor = await InstallUsageMonitor(service, client);
         if (!retValUsageMonitor.success) {
             console.error("pepperi-usage installation failed on: " + retValUsageMonitor.errorMessage);
             return retValUsageMonitor;
@@ -198,7 +198,7 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
                 UUID: codeJobUUID,
                 CodeJobName: "Pepperi Usage Monitor",
                 NumberOfTries: 10,
-                CronExpression: getCronExpression()
+                CronExpression: getWeeklyCronExpression(client.OAuthAccessToken)
             });
 
             console.log("Successfully updated code job.")
@@ -248,13 +248,7 @@ const UsageMonitorDaily:AddonDataScheme = {
         AddonUUID_RelationName:{
             Type: 'String',
             Indexed: true
-        },
-        CreationDateTime:{
-            Type: 'Date'
-        },
-        ExpriationDateTime:{
-            Type:'Date'
-        },
+        },        
         RelationData:{
             Type:'String'
         }
@@ -336,7 +330,7 @@ async function DailyCodeJob(service, usageCodeJob){
 
 }
 
-async function InstallUsageMonitor(service){
+async function InstallUsageMonitor(service, client){
     let retVal = {
         success: true,
         errorMessage: ''
@@ -367,7 +361,7 @@ async function InstallUsageMonitor(service){
                     Description: "Pepperi Usage Monitor",
                     Type: "AddonJob",
                     IsScheduled: true,
-                    CronExpression: getCronExpression(),
+                    CronExpression: getWeeklyCronExpression(client.OAuthAccessToken),
                     AddonPath: "api",
                     FunctionName: "run_collect_data",
                     AddonUUID: service.client.AddonUUID,
@@ -407,14 +401,14 @@ function GetDailyAddonUsageCronExpression(usageCodeJob) {
     let split2:string= splitCron[2]+' '+splitCron[3]+' *'; 
 
     let setHour:any= getCronHour-1;
-
-    if(setHour && setHour> 23){
+    
+    if(setHour && ((setHour> 23) || (setHour<3))){
         setHour= '23';
     }
     let setCronExpression:string= split1+' '+setHour+' '+split2;
     return setCronExpression;
 }
-
+/*
 function getCronExpression() {
     let expressions = [
         '0 1 * * SAT',
@@ -443,6 +437,7 @@ function getCronExpression() {
     const index = Math.floor(Math.random() * expressions.length);
     return expressions[index];
 }
+*/
 
 function getWeeklyCronExpression(token) {
     const rand = (jwtDecode(token)['pepperi.distributorid']) % 59;

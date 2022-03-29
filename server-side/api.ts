@@ -9,7 +9,7 @@ export async function get_relations_daily_data(client:Client, request:Request){
     const service = new MyService(client);
     const papiClient = service.papiClient;
     const relations = papiClient.addons.data.relations.iter({where: "RelationName='UsageMonitor'"});
-    let ExpriationDateTime: Date= new Date(new Date().setFullYear(new Date().getFullYear() + 1));
+    let ExpirationDateTime: Date= new Date(new Date().setFullYear(new Date().getFullYear() + 1));
 
     for await (const relation of relations)
     {
@@ -29,7 +29,7 @@ export async function get_relations_daily_data(client:Client, request:Request){
         let insertRelation= {
             Key: UUID,
             AddonUUID_RelationName: AddonUUID_RelationName,
-            ExpriationDateTime: ExpriationDateTime,
+            ExpirationDateTime: ExpirationDateTime,
             RelationData: RelationData
         }
         
@@ -121,7 +121,6 @@ export async function mock_relation5() {
 // See https://apidesign.pepperi.com/add-ons/addons-link-table/relation-names/usage-monitor
 export async function get_relations_data(client: Client) {
     const service = new MyService(client);
-    const papiClient = service.papiClient;
 
     let getRelationsResultObject = {
         Data: [],
@@ -148,57 +147,80 @@ export async function get_relations_data(client: Client) {
             if((usageRelation[index]['ReportingPeriod']== "Weekly" || (!usageRelation[index]['ReportingPeriod']) ) ){
                 //If Aggregation Function is sum, sum all data from last week.
                 if(usageRelation[index]['AggregationFunction']== "SUM"){
-                    let sum:number=0;
-                    let id= usageRelation[index]['AddonUUID']+"_"+usageRelation[index]["Name"];
-
-                    //checking for a span of a week
-                    let startTime:Date= new Date();
-                    let endTime:Date= new Date();
-                    startTime.setDate(startTime.getDate() -8);
-                    endTime.setDate(endTime.getDate()-1);
-                    const startTimeString = startTime.toISOString();
-                    const endTimeString = endTime.toISOString();
-
-                    let dateCheck: string= "CreationDateTime>="+ startTimeString+" and CreationDateTime<="+ endTimeString;
-                            
-                    const usageMonitorUUID:string=client.AddonUUID;
-                    const dailyUsageTable:string= 'UsageMonitorDaily';
-
-                    let Params: string= `where=AddonUUID_RelationName='${id}'&${dateCheck}&order_by=CreationDateTime DESC`;
-                    const Url:string = `${usageMonitorUUID}/${dailyUsageTable}/${'?'+ Params}`;
-                    const Result= await papiClient.get(`/addons/data/${Url}`);
-                    for(let i=0; i<Result[0]['RelationData']['Resources'][0].length; i++){
-                        sum= aggregateData(Result, i);
-                        Result[0]['RelationData']['Resources'][0][i]['Size']= sum;
-                    }
-                    insert_Relation(Result[0]['RelationData'], getRelationsResultObject, relationsDataList);
+                    await GetDataForSUMAggregation(client, usageRelation, index, getRelationsResultObject, relationsDataList);
                 }
                 
                 //If Aggregation Function is last, take the latest data that was inserted to the table.
                 if(usageRelation[index]['AggregationFunction']== "LAST" || (!usageRelation[index]['AggregationFunction']) ){
-                    let id= usageRelation[index]['AddonUUID']+"_"+usageRelation[index]["Name"];
-        
-                    let Params: string= `where=AddonUUID_RelationName='${id}'&order_by=CreationDateTime DESC`;
-                    const usageMonitorUUID:string=client.AddonUUID;
-                    const dailyUsageTable:string= 'UsageMonitorDaily';
-                    const Url:string = `${usageMonitorUUID}/${dailyUsageTable}/${'?'+ Params}`;
-                    const Result= await papiClient.get(`/addons/data/${Url}`);
-                    let lastData= Result[0]['RelationData'];
-                    insert_Relation(lastData, getRelationsResultObject, relationsDataList);
+                    await GetDataForLASTAggregation(client, usageRelation, index, getRelationsResultObject, relationsDataList);                    
                 }
             }
         } 
     })
+
     getRelationsResultObject.Relations=relationsDataList;
     return getRelationsResultObject;
+}
+
+
+//If aggregation function is sum
+async function GetDataForSUMAggregation(client, usageRelation, index, getRelationsResultObject, relationsDataList){
+    const service = new MyService(client);
+    const papiClient = service.papiClient;
+
+    let sum:number=0;
+    let id= usageRelation[index]['AddonUUID']+"_"+usageRelation[index]["Name"];
+
+    //checking for a span of a week
+    let startTime:Date= new Date();
+    startTime.setDate(startTime.getDate() -8);
+    const startTimeString = startTime.toISOString();
+
+    let dateCheck: string= "CreationDateTime>='"+ startTimeString+"'";
+            
+    const usageMonitorUUID:string=client.AddonUUID;
+    const dailyUsageTable:string= 'UsageMonitorDaily';
+
+    let Params: string= `where=AddonUUID_RelationName='${id}' and ${dateCheck}&order_by=CreationDateTime DESC`;
+
+    const Url:string = `${usageMonitorUUID}/${dailyUsageTable+'?'+ Params}`;
+
+    const Result= await papiClient.get(`/addons/data/${Url}`);
+
+    for(let i=0; i<Result[0]['RelationData']['Resources'][0].length; i++){
+        sum= aggregateData(Result, i);
+        Result[1]['RelationData']['Resources'][0][i]['Size']= sum;
+    }
+    insert_Relation(Result[1]['RelationData'], getRelationsResultObject, relationsDataList);
+}
+
+
+//If aggregation function is last
+async function GetDataForLASTAggregation(client, usageRelation, index, getRelationsResultObject, relationsDataList){
+    const service = new MyService(client);
+    const papiClient = service.papiClient;
+    let id= usageRelation[index]['AddonUUID']+"_"+usageRelation[index]["Name"];
+        
+    let Params: string= `where=AddonUUID_RelationName='${id}'&order_by=CreationDateTime DESC`;
+
+    const usageMonitorUUID:string=client.AddonUUID;
+    const dailyUsageTable:string= 'UsageMonitorDaily';
+    const Url:string = `${usageMonitorUUID}/${dailyUsageTable +'?'+ Params}`;
+
+    const Result= await papiClient.get(`/addons/data/${Url}`);
+
+    let lastData= Result[0]['RelationData'];
+    insert_Relation(lastData, getRelationsResultObject, relationsDataList);
 
 }
 
-//Sum all of the data from the relevant field.
+
+
+//If agrregation function is sum- sum all of the data from the relevant field.
 function aggregateData(Result, i){
     let sum=0;
-    for(let index=0;index<7;index++){
-        sum+=Result[index]['RelationData']['Resources'][0][i]['Size'];
+    for(let index=1;index<8;index++){
+        (Result[index])? sum+=Result[index]['RelationData']['Resources'][0][i]['Size'] :undefined;
     }
     return sum;
 }
