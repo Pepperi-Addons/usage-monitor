@@ -402,6 +402,7 @@ function GetDailyAddonUsageCronExpression(usageCodeJob) {
 
     let setHour:any= getCronHour-1;
     
+    //If setHour is after 23:00, set the hour to 23:00
     if(setHour && ((setHour> 23) || (setHour<3))){
         setHour= '23';
     }

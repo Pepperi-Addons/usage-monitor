@@ -181,11 +181,9 @@ async function GetDataForSUMAggregation(client, usageRelation, index, getRelatio
     const usageMonitorUUID:string=client.AddonUUID;
     const dailyUsageTable:string= 'UsageMonitorDaily';
 
-    let Params: string= `where=AddonUUID_RelationName='${id}' and ${dateCheck}&order_by=CreationDateTime DESC`;
+    let Params: string= `AddonUUID_RelationName='${id}' and ${dateCheck}`;
 
-    const Url:string = `${usageMonitorUUID}/${dailyUsageTable+'?'+ Params}`;
-
-    const Result= await papiClient.get(`/addons/data/${Url}`);
+    const Result= await papiClient.addons.data.uuid(usageMonitorUUID).table(dailyUsageTable).iter({where: Params, order_by: "CreationDateTime DESC"}).toArray();
 
     for(let i=0; i<Result[0]['RelationData']['Resources'][0].length; i++){
         sum= aggregateData(Result, i);
@@ -201,13 +199,11 @@ async function GetDataForLASTAggregation(client, usageRelation, index, getRelati
     const papiClient = service.papiClient;
     let id= usageRelation[index]['AddonUUID']+"_"+usageRelation[index]["Name"];
         
-    let Params: string= `where=AddonUUID_RelationName='${id}'&order_by=CreationDateTime DESC`;
-
     const usageMonitorUUID:string=client.AddonUUID;
     const dailyUsageTable:string= 'UsageMonitorDaily';
-    const Url:string = `${usageMonitorUUID}/${dailyUsageTable +'?'+ Params}`;
 
-    const Result= await papiClient.get(`/addons/data/${Url}`);
+    let Params: string= `AddonUUID_RelationName='${id}'`;
+    const Result= await papiClient.addons.data.uuid(usageMonitorUUID).table(dailyUsageTable).iter({where: Params, order_by: "CreationDateTime DESC"}).toArray();
 
     let lastData= Result[0]['RelationData'];
     insert_Relation(lastData, getRelationsResultObject, relationsDataList);
