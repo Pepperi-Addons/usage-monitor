@@ -198,14 +198,17 @@ async function GetDataForLASTAggregation(client, usageRelation, index, getRelati
     const service = new MyService(client);
     const papiClient = service.papiClient;
     let id= usageRelation[index]['AddonUUID']+"_"+usageRelation[index]["Name"];
-        
+
+    let Params: string= `where=AddonUUID_RelationName='${id}'&order_by=CreationDateTime DESC&page_size=1`;
+
     const usageMonitorUUID:string=client.AddonUUID;
     const dailyUsageTable:string= 'UsageMonitorDaily';
+    const Url:string = `${usageMonitorUUID}/${dailyUsageTable +'?'+ Params}`;
 
-    let Params: string= `AddonUUID_RelationName='${id}'`;
-    const Result= await papiClient.addons.data.uuid(usageMonitorUUID).table(dailyUsageTable).iter({where: Params, order_by: "CreationDateTime DESC"}).toArray();
+    const Result= await papiClient.get(`/addons/data/${Url}`);
 
     let lastData= Result[0]['RelationData'];
+
     insert_Relation(lastData, getRelationsResultObject, relationsDataList);
 
 }
