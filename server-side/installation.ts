@@ -157,6 +157,9 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
         const service = new MyService(client);
         const papiClient = service.papiClient;
 
+        
+
+
         console.log("About to get settings data...")
         const distributor = await service.GetDistributor(service.papiClient);
         const settingsData = await service.papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorSettings.Name).key(distributor.InternalID.toString()).get();
@@ -443,12 +446,12 @@ function getCronExpression() {
 function getWeeklyCronExpression(token) {
     const rand = (jwtDecode(token)['pepperi.distributorid']) % 59;
     let expressions = [
-        rand + "-59/60 21 * * *",
-        rand + "-59/60 22 * * *",
-        rand + "-59/60 23 * * *",
-        rand + "-59/60 0 * * *",
-        rand + "-59/60 1 * * *" ,
-        rand + "-59/60 2 * * *" 
+        rand + "-59/60 21 * * SAT",
+        rand + "-59/60 22 * * SAT",
+        rand + "-59/60 23 * * SAT",
+        rand + "-59/60 0 * * SAT",
+        rand + "-59/60 1 * * SAT" ,
+        rand + "-59/60 2 * * SAT" 
 
     ]
     const index = Math.floor(Math.random() * expressions.length);
