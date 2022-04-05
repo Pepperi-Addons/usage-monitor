@@ -4,6 +4,78 @@ import { UsageMonitorTable } from './installation'
 import { createPepperiUsage } from './crm-connector'
 import { get } from 'lodash';
 
+//If activities/transactions/UTDs count crossed the defined limit, print an error
+export async function MonitorErrors(client: Client, request: Request) {
+    const service = new MyService(client);
+    let InternalError: string = "";
+    InternalError= await printError(client, request);
+
+    const distributor = await service.GetDistributor(service.papiClient);
+    let DistributorID= distributor.UUID;
+    
+    if(InternalError!=""){
+        let monitorActivity = {
+            Code: "Test limit",
+            Type: "SystemStatus",
+            GeneralErrorMessage: "Check if any activity crossed the limit",
+            DistributorID: DistributorID,
+            InternalErrors: [{ ErrorMessage: InternalError }]
+        };
+        
+        return monitorActivity;
+
+    }
+    return null;
+    
+}
+
+async function printError(client: Client, request: Request){
+    let InternalError: string = "";
+
+    request.query= {key: 'Data.NucleusActivities'};
+    let getActivitiesData= await get_all_data_for_key(client, request);
+    let activitiesValues;
+
+    if(getActivitiesData && (Array.isArray(getActivitiesData) && ((getActivitiesData as Array<any>).length !== 0)) && getActivitiesData!= undefined){
+        activitiesValues= extractActivityData(getActivitiesData);
+        //if activitiesCount is greater than 2 million, print error
+        if(activitiesValues> 2*(Math.pow(10,5))){     
+            InternalError+= "Activities count crossed the limit";
+        }
+    }
+    
+    request.query = { key: 'Data.NucleusTransactionLines' };
+    let getTransactionsData= await get_all_data_for_key(client, request);
+    let transactionsValues;
+
+    if (getTransactionsData && (Array.isArray(getTransactionsData) && ((getTransactionsData as Array<any>).length !== 0)) && getTransactionsData!= undefined ) {
+        transactionsValues = extractActivityData(getTransactionsData);
+        //if transactionsCount is greater than 10 million, print error
+        if (transactionsValues > 10 * (Math.pow(10, 5))) {
+            InternalError += " Transactions count crossed the limit";
+        }
+    }
+
+    request.query = { key: 'Data.UserDefinedTables' };
+    let getUDTData= await get_all_data_for_key(client, request);
+    let UDTValues;
+
+    if (getUDTData && (Array.isArray(getUDTData) && ((getUDTData as Array<any>).length !== 0)) && getUDTData!= undefined) {
+        UDTValues = extractActivityData(getUDTData);
+        //if UDTsCount is greater than 10 million, print error
+        if (UDTValues > 10 * (Math.pow(10, 5))) {
+            InternalError += " UDTs count crossed the limit";
+        }
+    }
+    return InternalError;
+}
+
+function extractActivityData(getActivitiesData) {
+    let activitiesCount;
+    activitiesCount = getActivitiesData[getActivitiesData.length - 1];
+    let activitiesValues = (Object.values(activitiesCount))[0];
+    return activitiesValues;
+}
 
 export async function get_relations_daily_data(client:Client, request:Request){
     const service = new MyService(client);
@@ -261,9 +333,7 @@ function insert_Relation(resource, getRelationsResultObject, relationsDataList){
 export async function get_relations_data1(client: Client) {
     const service = new MyService(client);
     const papiClient = service.papiClient;
-
     const relations = papiClient.addons.data.relations.iter({where: "RelationName='UsageMonitor'"});
-
     let getRelationsResultObject = {
         Data: [],
         Usage: [],
@@ -271,7 +341,6 @@ export async function get_relations_data1(client: Client) {
         MonthlyUsage:[],
         Relations: {}
     };
-
     let relationsDataList: {
         [key: string]: 
             {
@@ -280,18 +349,14 @@ export async function get_relations_data1(client: Client) {
                 Size: number
             }[]        
     }[] = [];
-
     let arrPromises: Promise<any>[] = [];
-
     for await (const relation of relations)
     {
         try {
             const url = `/addons/api/${relation.AddonUUID}${relation.AddonRelativeURL?.startsWith('/') ? relation.AddonRelativeURL : '/' + relation.AddonRelativeURL}`;
-
             // "data" is an object containing a title and a list of objects. 
             // Rearrange data from all external sources as a list of objects, each one has the title as key, and list of resources as value.
             arrPromises.push(service.papiClient.get(url).then(data => {
-
                 if (["Data", "Setup", "Usage", "MonthlyUsage"].includes(data.Title)) {
                     getRelationsResultObject[data.Title] = getRelationsResultObject[data.Title].concat(data.Resources);
                 }
@@ -299,7 +364,6 @@ export async function get_relations_data1(client: Client) {
                     // Allow multiple relations to reside in the same tab (title)
                     let index = relationsDataList.map(x => Object.keys(x)[0]).indexOf(data.Title);
                     if (index > -1) {
-
                         // Add resources to existing one in same tab
                         relationsDataList[index][data.Title] = relationsDataList[index][data.Title].concat(data.Resources);
                     }
@@ -319,16 +383,12 @@ export async function get_relations_data1(client: Client) {
             }
         }
     }
-
     await Promise.all(arrPromises);
-
     // getRelationsResultObject.Usage = [
     //     {Data: "AmirUsage1", Description: "AmirUsage1 Description1", Size: 17},
     //     {Data: "AmirUsage2", Description: "AmirUsage2 Description2", Size: 36}
     // ];
-
     getRelationsResultObject.Relations = relationsDataList;
-
     return getRelationsResultObject;
 }
 */
