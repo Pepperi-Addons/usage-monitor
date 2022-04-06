@@ -95,6 +95,7 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
     try {
         const service = new MyService(client);
         const monitorSettings = await service.getMonitorSettings();
+       
 
         // unschedule UsageMonitor
         console.log("About to remove code job Pepperi Usage Monitor...");
@@ -111,10 +112,10 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
 
         // unschedule DailyUsageMonitor
         console.log("About to remove code job Pepperi daily Usage Monitor...");
-        let DailyUsageMonitorCodeJobUUID = monitorSettings.dailyCodeJobUUID;
+        let DailyUsageMonitorCodeJobUUID = monitorSettings.DailyUsageMonitorCodeJobUUID;
         if(DailyUsageMonitorCodeJobUUID != '') {
             await service.papiClient.codeJobs.upsert({
-                UUID:UsageMonitorCodeJobUUID,
+                UUID: DailyUsageMonitorCodeJobUUID,
                 CodeJobName: "Pepperi Daily Usage Monitor",
                 IsScheduled: false,
                 CodeJobIsHidden:true
@@ -155,11 +156,7 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
 export async function upgrade(client: Client, request: Request): Promise<any> {
     try {
         const service = new MyService(client);
-        const papiClient = service.papiClient;
-
         
-
-
         console.log("About to get settings data...")
         const distributor = await service.GetDistributor(service.papiClient);
         const settingsData = await service.papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorSettings.Name).key(distributor.InternalID.toString()).get();
@@ -175,14 +172,17 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
         }
 
         //creating code job for daily usage
-        const usageCodeJob= await service.papiClient.codeJobs.uuid(DailyUsageMonitorCodeJobUUID).get();
+        const usageCodeJob= await service.papiClient.codeJobs.uuid(codeJobUUID).get();
 
-        if(DailyUsageMonitorCodeJobUUID != '') {
+        if(DailyUsageMonitorCodeJobUUID == undefined) {
             console.log("About to create new code job");
-            DailyCodeJob(service, usageCodeJob);
+            let retVal= await DailyCodeJob(service, usageCodeJob);
+            settingsData.Data.DailyUsageMonitorCodeJobUUID= retVal["dailyCodeJobUUID"];
+
+            console.log(`About to add data to settings table ${UsageMonitorSettings.Name}...`);
+            const settingsResponse = await service.papiClient.addons.data.uuid(client.AddonUUID).table('UsageMonitorSettings').upsert(settingsData);
         }
-
-
+        
         console.log(`Current Addon version is ${request.body.FromVersion}`);
         if(Semver.lte(request.body.FromVersion, '1.0.59')){
             try{
@@ -404,12 +404,14 @@ function GetDailyAddonUsageCronExpression(usageCodeJob) {
     let split2:string= splitCron[2]+' '+splitCron[3]+' *'; 
 
     let setHour:any= getCronHour-1;
+    let setCronExpression:string;
     
     //If setHour is after 23:00, set the hour to 23:00
-    if(setHour && ((setHour> 23) || (setHour<3))){
-        setHour= '23';
+    if((setHour> 23) || (setHour<3)){
+        setCronExpression= '00 23 * * *'
+        return setCronExpression;
     }
-    let setCronExpression:string= split1+' '+setHour+' '+split2;
+    setCronExpression= split1+' '+setHour+' '+split2;
     return setCronExpression;
 }
 /*
@@ -449,9 +451,9 @@ function getWeeklyCronExpression(token) {
         rand + "-59/60 21 * * SAT",
         rand + "-59/60 22 * * SAT",
         rand + "-59/60 23 * * SAT",
-        rand + "-59/60 0 * * SAT",
-        rand + "-59/60 1 * * SAT" ,
-        rand + "-59/60 2 * * SAT" 
+        rand + "-59/60 0 * * SUN",
+        rand + "-59/60 1 * * SUN" ,
+        rand + "-59/60 2 * * SUN" 
 
     ]
     const index = Math.floor(Math.random() * expressions.length);

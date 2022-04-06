@@ -126,7 +126,6 @@ export async function get_relations_data(client: Client) {
         Data: [],
         Usage: [],
         Setup: [],
-        MonthlyUsage:[],
         Relations: {}
     };
 
@@ -228,7 +227,7 @@ function aggregateData(Result, i){
 function insert_Relation(resource, getRelationsResultObject, relationsDataList){
     
     try {
-            if (["Data", "Setup", "Usage", "MonthlyUsage"].includes(resource.Title)) {
+            if (["Data", "Setup", "Usage"].includes(resource.Title)) {
                 getRelationsResultObject[resource.Title] = getRelationsResultObject[resource.Title].concat(resource.Resources[0]);
             }
             else {
@@ -649,7 +648,6 @@ export async function collect_data(client: Client, request: Request) {
     let lastMonth = new Date(Date.now());
     lastMonth.setMonth(lastMonth.getMonth() - 1);
     const lastMonthString = lastMonth.toISOString();
-    let TotalMonthlyActivitiesAndTransactions:any=0;
 
     let allActivities={};
     // Hack: shorten ISO format, remove the time. This is b/c papi cannot parse ISO string with decimal point for seconds.
@@ -662,15 +660,11 @@ export async function collect_data(client: Client, request: Request) {
     
     let workingUsers = 0;
     let workingBuyers = 0;
-    let MonthlyActivitiesAndTransactionsByBuyers:Number=0;
-    let MonthlyActivitiesAndTransactionsByUsers:Number=0;
-
 
     let relationsData: any = null;
     let dataAdditionalRelations: any = null;
     let usageAdditionalRelations: any = null;
     let setupAdditionalRelations: any = null;
-    let monthlyUsageAdditionalRelations: any = null;
 
 
     await Promise.all([
@@ -750,22 +744,16 @@ export async function collect_data(client: Client, request: Request) {
 
                     // The following code dependes on both allActivitiesUsersAndBuyersTask and buyers tasks:
                     const allActivitiesUsersAndBuyers = await allActivitiesUsersAndBuyersTask;
-                    for(let key in allActivitiesUsersAndBuyers){
-                        let value= allActivitiesUsersAndBuyers[key];
-                        TotalMonthlyActivitiesAndTransactions+= value;
-                    }
-
 
                     // Iterate buyersObject, see which ones appear in allActivitiesUsersAndBuyers to get the number of working buyers (the rest are working users).
                     //get the number of activity and transactions created by buyers.
                     buyersObjects.forEach(buyerObject => {
                         const buyerInternalID = buyerObject['InternalID'] as number;
                         if(allActivitiesUsersAndBuyers[buyerInternalID] && allActivitiesUsersAndBuyers[buyerInternalID] > 0){
-                            MonthlyActivitiesAndTransactionsByBuyers+=allActivitiesUsersAndBuyers[buyerInternalID];;
                             workingBuyers++;
                         }
                     });
-
+    
                     //workingUsers = Object.keys(allActivitiesUsersAndBuyers).length - workingBuyers;
                 }
                 catch (error) {
@@ -790,10 +778,10 @@ export async function collect_data(client: Client, request: Request) {
                     usersObjects.forEach(userObject => {
                         const userInternalID = userObject['InternalID'] as number;
                         if(allActivitiesUsersAndBuyers[userInternalID] && allActivitiesUsersAndBuyers[userInternalID] > 0){
-                            MonthlyActivitiesAndTransactionsByUsers+=allActivitiesUsersAndBuyers[userInternalID] ;
                             workingUsers++;
                         }
                     });
+
                 }
                 catch (error) {
                     if (error instanceof Error)
@@ -808,8 +796,6 @@ export async function collect_data(client: Client, request: Request) {
                 dataAdditionalRelations = (x as any).Data;
                 usageAdditionalRelations = (x as any).Usage;
                 setupAdditionalRelations = (x as any).Setup;
-                monthlyUsageAdditionalRelations = (x as any).MonthlyUsage;
-
                 
             })
             .catch(error => errors.push({object:'RelationsData', error:('message' in error) ? error.message : 'general error'}))
@@ -831,7 +817,6 @@ export async function collect_data(client: Client, request: Request) {
         DistributorInternalID: distributorDataInternalID,
         distributorName: distributorDataName,
         distributorAccountingStatus: distributorDataAccountingStatus,
-        MonthlyUsage:{}
     };
     result.Setup = {
         Profiles: profilesCount,
@@ -870,12 +855,6 @@ export async function collect_data(client: Client, request: Request) {
 
     }
 
-    result.MonthlyUsage= {
-        MonthlyBuyersUsage: MonthlyActivitiesAndTransactionsByBuyers,
-        MonthlyUsersUsage: MonthlyActivitiesAndTransactionsByUsers,
-        Total_Monthly_new_Activities_and_transaction: TotalMonthlyActivitiesAndTransactions
-
-    }
 
     result.Errors = errors;
 
@@ -890,9 +869,6 @@ export async function collect_data(client: Client, request: Request) {
     });
     setupAdditionalRelations.forEach(element => {
         result.Setup[element.Data] = {Description: element.Description, Size: element.Size};
-    });
-    monthlyUsageAdditionalRelations.forEach(element => {
-        result.MonthlyUsage[element.Data] = {Description: element.Description, Size: element.Size};
     });
 
     return result;
