@@ -76,6 +76,10 @@ export async function install(client: Client, request: Request): Promise<any> {
         console.log(`About to add data to settings table ${UsageMonitorSettings.Name}...`);
         const settingsResponse = await service.papiClient.addons.data.uuid(client.AddonUUID).table('UsageMonitorSettings').upsert(settingsBodyADAL);
 
+        //creating a relation with health monitor
+        healthMonitorRelation(client);
+
+
         console.log('Pepperi Usage addon installation succeeded.');
         return {
             success: true,
@@ -155,26 +159,14 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
 export async function upgrade(client: Client, request: Request): Promise<any> {
     try {
         const service = new MyService(client);
-        const papiClient = service.papiClient;
 
-        //Creating a relation with helath monitor
-        let addonUUID= client.AddonUUID;
-        let relation:Relation={
-            "RelationName": "HealthMonitor",
-            "AddonUUID": addonUUID,
-            "Name": "MonitorErrors",
-            "Type": "AddonAPI",
-            "AddonRelativeURL": "/api/MonitorErrors"
+        //If health monitor relation doesn`t exist, create the relation
+        const url = `/addons/data/relations?where=RelationName='HealthMonitor'`;
+        let getRelationData = await service.papiClient.get(url);
+
+        if(getRelationData.length == 0){
+            healthMonitorRelation(client);
         }
-
-        try{
-            await papiClient.addons.data.relations.upsert(relation);
-        }
-        catch(ex){
-            console.log(`upsertRelation: ${ex}`);
-            throw new Error((ex as {message:string}).message);
-        }  
-
 
         console.log("About to get settings data...")
         const distributor = await service.GetDistributor(service.papiClient);
@@ -182,7 +174,6 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
         const codeJobUUID = settingsData.Data.UsageMonitorCodeJobUUID;
         const DailyUsageMonitorCodeJobUUID = settingsData.Data.DailyUsageMonitorCodeJobUUID;
         console.log(`Got code job UUID ${codeJobUUID}`);
-
 
         //If daily usage table does not exist, create a new table.
         if(Semver.lte(request.body.FromVersion, '1.0.95')){
@@ -197,7 +188,6 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
             console.log("About to create new code job");
             DailyCodeJob(service, usageCodeJob);
         }
-
 
         console.log(`Current Addon version is ${request.body.FromVersion}`);
         if(Semver.lte(request.body.FromVersion, '1.0.59')){
@@ -347,6 +337,30 @@ async function DailyCodeJob(service, usageCodeJob){
 
     return retVal;
 
+}
+
+//creates health monitor relation
+async function healthMonitorRelation(client: Client){
+    const service = new MyService(client);
+    const papiClient = service.papiClient;
+
+    //Creating a relation with helath monitor
+    let addonUUID= client.AddonUUID;
+    let relation:Relation={
+        "RelationName": "HealthMonitor",
+        "AddonUUID": addonUUID,
+        "Name": "MonitorErrors",
+        "Type": "AddonAPI",
+        "AddonRelativeURL": "/api/MonitorErrors"
+    }
+
+    try{
+        await papiClient.addons.data.relations.upsert(relation);
+    }
+    catch(ex){
+        console.log(`upsertRelation: ${ex}`);
+        throw new Error((ex as {message:string}).message);
+    }
 }
 
 async function InstallUsageMonitor(service, client){
