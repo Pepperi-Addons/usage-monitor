@@ -34,7 +34,6 @@ export async function install(client: Client, request: Request): Promise<any> {
             console.log(`About to create settings table ${UsageMonitorSettings.Name}...`)
             const UsageMonitorSettingsResponse = await service.papiClient.addons.data.schemes.post(UsageMonitorSettings);            
             console.log('Settings table installed successfully.');
-
         }
         catch (err) {
             if (err instanceof Error)
@@ -51,7 +50,6 @@ export async function install(client: Client, request: Request): Promise<any> {
 
         const usageCodeJob= await service.papiClient.codeJobs.uuid(data[retValUsageMonitor["codeJobName"]]).get();
 
-
         //creating daily usage table
         UsageMonitorDailyTable(service);
 
@@ -62,10 +60,8 @@ export async function install(client: Client, request: Request): Promise<any> {
             return dailyRetValUsageMonitor;
         }
         console.log('Pepperi Usage addon table and code job installation succeeded.');
-
         
         data[dailyRetValUsageMonitor["dailyCodeJobName"]] = dailyRetValUsageMonitor["dailyCodeJobUUID"];
-
 
         // Add code job info to settings table.
         const settingsBodyADAL= {
@@ -78,7 +74,6 @@ export async function install(client: Client, request: Request): Promise<any> {
 
         //creating a relation with health monitor
         healthMonitorRelation(client);
-
 
         console.log('Pepperi Usage addon installation succeeded.');
         return {
@@ -260,11 +255,8 @@ const UsageMonitorDaily:AddonDataScheme = {
         },        
         RelationData:{
             Type:'String'
-        }
-        
+        }  
     } as any
-    
-
 }
 
 const UsageMonitorSettings:AddonDataScheme = {
@@ -345,8 +337,8 @@ async function healthMonitorRelation(client: Client){
     const papiClient = service.papiClient;
 
     //Creating a relation with helath monitor
-    let addonUUID= client.AddonUUID;
-    let relation:Relation={
+    let addonUUID = client.AddonUUID;
+    let relation: Relation = {
         "RelationName": "HealthMonitor",
         "AddonUUID": addonUUID,
         "Name": "MonitorErrors",
