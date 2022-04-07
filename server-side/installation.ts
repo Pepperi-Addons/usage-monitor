@@ -49,14 +49,14 @@ export async function install(client: Client, request: Request): Promise<any> {
         data["Name"] = distributor.Name;
         data[retValUsageMonitor["codeJobName"]] = retValUsageMonitor["codeJobUUID"];
 
-        const usageCodeJob= await service.papiClient.codeJobs.uuid(data[retValUsageMonitor["codeJobName"]]).get();
+        const usageCodeJob = await service.papiClient.codeJobs.uuid(data[retValUsageMonitor["codeJobName"]]).get();
 
 
         //creating daily usage table
         UsageMonitorDailyTable(service);
 
         //creating a daily code job
-        let dailyRetValUsageMonitor = await DailyCodeJob(service, usageCodeJob);
+        let dailyRetValUsageMonitor = await UpsertDailyCodeJob(service, usageCodeJob);
         if (!dailyRetValUsageMonitor.success) {
             console.error("pepperi-usage-daily installation failed on: " + dailyRetValUsageMonitor.errorMessage);
             return dailyRetValUsageMonitor;
@@ -95,8 +95,6 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
     try {
         const service = new MyService(client);
         const monitorSettings = await service.getMonitorSettings();
-       
-
         // unschedule UsageMonitor
         console.log("About to remove code job Pepperi Usage Monitor...");
         let UsageMonitorCodeJobUUID = monitorSettings.UsageMonitorCodeJobUUID;
@@ -164,7 +162,6 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
         const DailyUsageMonitorCodeJobUUID = settingsData.Data.DailyUsageMonitorCodeJobUUID;
         console.log(`Got code job UUID ${codeJobUUID}`);
 
-
         //If daily usage table does not exist, create a new table.
         if(Semver.lte(request.body.FromVersion, '1.0.95')){
             console.log("About to create new daily table");
@@ -172,12 +169,12 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
         }
 
         //creating code job for daily usage
-        const usageCodeJob= await service.papiClient.codeJobs.uuid(codeJobUUID).get();
+        const usageCodeJob = await service.papiClient.codeJobs.uuid(codeJobUUID).get();
 
         if(DailyUsageMonitorCodeJobUUID == undefined) {
             console.log("About to create new code job");
-            let retVal= await DailyCodeJob(service, usageCodeJob);
-            settingsData.Data.DailyUsageMonitorCodeJobUUID= retVal["dailyCodeJobUUID"];
+            let retVal = await UpsertDailyCodeJob(service, usageCodeJob);
+            settingsData.Data.DailyUsageMonitorCodeJobUUID = retVal["dailyCodeJobUUID"];
 
             console.log(`About to add data to settings table ${UsageMonitorSettings.Name}...`);
             const settingsResponse = await service.papiClient.addons.data.uuid(client.AddonUUID).table('UsageMonitorSettings').upsert(settingsData);
@@ -283,7 +280,7 @@ async function UsageMonitorDailyTable(service) {
     }
 }
 
-async function DailyCodeJob(service, usageCodeJob){
+async function UpsertDailyCodeJob(service, usageCodeJob){
     let retVal = {
         success: true,
         errorMessage: ''
@@ -307,8 +304,8 @@ async function DailyCodeJob(service, usageCodeJob){
                     NumberOfTries: 3,
                 });
                 console.log("Code job Pepperi Usage Monitor created successfully.");
-                retVal["dailyCodeJobName"]= 'DailyUsageMonitorCodeJobUUID';
-                retVal["dailyCodeJobUUID"]= DailyCodeJob.UUID;
+                retVal["dailyCodeJobName"] = 'DailyUsageMonitorCodeJobUUID';
+                retVal["dailyCodeJobUUID"] = DailyCodeJob.UUID;
 
             }
             catch (err)
@@ -371,7 +368,6 @@ async function InstallUsageMonitor(service, client){
                     NumberOfTries: 10,
                 });
                 console.log("Code job Pepperi Usage Monitor created successfully.");
-
                 retVal["codeJobName"] = 'UsageMonitorCodeJobUUID';
                 retVal["codeJobUUID"] = codeJob.UUID;
             }
@@ -397,21 +393,21 @@ async function InstallUsageMonitor(service, client){
 }
 
 function GetDailyAddonUsageCronExpression(usageCodeJob) {
-    let cronExp= usageCodeJob['CronExpression'];
-    let splitCron=cronExp?.split(' ');
-    let getCronHour= splitCron[1];
-    let split1:string= splitCron[0];
-    let split2:string= splitCron[2]+' '+splitCron[3]+' *'; 
+    let cronExp = usageCodeJob['CronExpression'];
+    let cronValues = cronExp?.split(' ');
+    let getCronHour = cronValues[1];
+    let getCronMinutes: string = cronValues[0];
+    let getCronDayAndMonth: string = cronValues[2]+' '+cronValues[3]+' *'; 
 
-    let setHour:any= getCronHour-1;
-    let setCronExpression:string;
+    let setHour: any= getCronHour-1;
+    let setCronExpression: string;
     
     //If setHour is after 23:00, set the hour to 23:00
-    if((setHour> 23) || (setHour<3)){
-        setCronExpression= '00 23 * * *'
+    if((setHour > 23) || (setHour < 3)){
+        setCronExpression = '00 23 * * *'
         return setCronExpression;
     }
-    setCronExpression= split1+' '+setHour+' '+split2;
+    setCronExpression = getCronMinutes + ' ' + setHour + ' ' + getCronDayAndMonth;
     return setCronExpression;
 }
 /*
