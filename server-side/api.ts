@@ -8,7 +8,7 @@ import { get } from 'lodash';
 export async function get_relations_daily_data(client:Client, request:Request){
     const service = new MyService(client);
     const papiClient = service.papiClient;
-    const relations = papiClient.addons.data.relations.iter({where: "RelationName='UsageMonitor'"});
+    const relations = await papiClient.addons.data.relations.iter({where: "RelationName='UsageMonitor'"});
     let ExpirationDateTime: Date= new Date(new Date().setFullYear(new Date().getFullYear() + 1));
 
     for await (const relation of relations)
@@ -141,7 +141,7 @@ export async function get_relations_data(client: Client) {
     await service.papiClient.addons.data.relations.iter({where:'RelationName=UsageMonitor'}).toArray()
     .then(async x => {
         let usageRelation = x;
-        for(let index=0;index<usageRelation.length;index++){
+        for(let index=0; index < usageRelation.length; index++){
             //If reporting period is weekly
             if((usageRelation[index]['ReportingPeriod']== "Weekly" || (!usageRelation[index]['ReportingPeriod']) ) ){
                 //If Aggregation Function is sum, sum all data from last week.
@@ -184,11 +184,14 @@ async function GetDataForSUMAggregation(client, usageRelation, index, getRelatio
 
     const Result = await papiClient.addons.data.uuid(usageMonitorUUID).table(dailyUsageTable).iter({where: Params, order_by: "CreationDateTime DESC"}).toArray();
 
-    for(let i=0; i<Result[0]['RelationData']['Resources'][0].length; i++){
-        sum = aggregateData(Result, i);
-        Result[1]['RelationData']['Resources'][0][i]['Size'] = sum;
+    if(Result[1]){
+        for(let i=0; i<Result[0]['RelationData']['Resources'][0].length; i++){
+            sum = aggregateData(Result, i);
+            Result[1]['RelationData']['Resources'][0][i]['Size'] = sum;
+            
+        }
+        insert_Relation(Result[1]['RelationData'], getRelationsResultObject, relationsDataList);
     }
-    insert_Relation(Result[1]['RelationData'], getRelationsResultObject, relationsDataList);
 }
 
 
@@ -786,8 +789,8 @@ export async function collect_data(client: Client, request: Request) {
             })
             .catch(error => errors.push({object:'ActualUsers', error:('message' in error) ? error.message : 'general error'})),     
 
-        get_relations_data(client)
-            .then(x => { 
+        await get_relations_data(client)
+            .then( async x => { 
                 relationsData = (x as any).Relations; 
                 dataAdditionalRelations = (x as any).Data;
                 usageAdditionalRelations = (x as any).Usage;
