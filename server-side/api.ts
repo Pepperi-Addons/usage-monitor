@@ -22,8 +22,7 @@ export async function get_relations_daily_data(client:Client, request:Request){
         let AddonUUID_RelationName = relation.AddonUUID+"_"+relation["Name"];
         let RelationData = {
             Title: title,
-            Resources:[
-                resource]
+            Resources: resource
         }
         
         let insertRelation = {
@@ -183,14 +182,39 @@ async function GetDataForSUMAggregation(client, usageRelation, index, getRelatio
     let Params: string = `AddonUUID_RelationName='${id}' and ${dateCheck}`;
 
     const Result = await papiClient.addons.data.uuid(usageMonitorUUID).table(dailyUsageTable).iter({where: Params, order_by: "CreationDateTime DESC"}).toArray();
+    let retObj=(Result[0]) ? Result[0] : undefined;
 
-    if(Result[1]){
-        for(let i=0; i<Result[0]['RelationData']['Resources'][0].length; i++){
-            sum = aggregateData(Result, i);
-            Result[1]['RelationData']['Resources'][0][i]['Size'] = sum;
-            
+    let todayDate: Date = new Date();
+    let todayDateString= todayDate.toDateString();
+    let firstElementDate= (Result[0]) ? Result[0]['CreationDateTime'] : undefined;
+    let firstElementDateString= firstElementDate ? (new Date(firstElementDate)).toDateString() : undefined;
+
+    //checking if the first item in the array is from today or yesterday- if it is from today we take the second element in the array (from yesterday), else we take the first.
+    //if the last item is from today
+    if(retObj && firstElementDateString && firstElementDateString == todayDateString){
+        if(Result[1]){
+            //check sum for every data in resources
+            for(let i= 0; i < retObj['RelationData']['Resources'].length; i++){
+                let start = 1;
+                sum = aggregateData(Result, i, start);
+                retObj['RelationData']['Resources'][i]['Size'] = sum;
+            }
+            //insert retObj to the exported array
+            insert_Relation(retObj['RelationData'], getRelationsResultObject, relationsDataList);
         }
-        insert_Relation(Result[1]['RelationData'], getRelationsResultObject, relationsDataList);
+    }
+    //if the last item is from yesterday
+    else{
+        if(Result[0] && retObj){
+            //check sum for every data in resources
+            for(let i= 0; i < retObj['RelationData']['Resources'].length; i++){
+                let start = 0;
+                sum = aggregateData(Result, i, start);
+                retObj['RelationData']['Resources'][i]['Size'] = sum;
+            }
+            //insert retObj to the exported array
+            insert_Relation(retObj['RelationData'], getRelationsResultObject, relationsDataList);
+        }
     }
 }
 
@@ -209,19 +233,19 @@ async function GetDataForLASTAggregation(client, usageRelation, index, getRelati
 
     const Result = await papiClient.get(`/addons/data/${Url}`);
 
-    let lastData = Result[0]['RelationData'];
+    let lastData =(Result[0]) ? Result[0]['RelationData'] : undefined;
 
     insert_Relation(lastData, getRelationsResultObject, relationsDataList);
-
 }
 
 
 
 //If agrregation function is sum- sum all of the data from the relevant field.
-function aggregateData(Result, i){
+function aggregateData(Result, i, start){
     let sum = 0;
-    for(let index=1;index<8;index++){
-        (Result[index])? sum+=Result[index]['RelationData']['Resources'][0][i]['Size'] :undefined;
+    //checking for a span of a week
+    for(let index= start; index < 8;index++){
+        (Result[index]) ? sum+=Result[index]['RelationData']['Resources'][i]['Size'] : undefined;
     }
     return sum;
 }
@@ -243,7 +267,9 @@ function insert_Relation(resource, getRelationsResultObject, relationsDataList){
                 }
                 else {
                     relationsDataList.push({
-                    [resource.Title]: resource.Resources[0]
+
+/////                    //was resources[0]
+                    [resource.Title]: resource.Resources
                 })}}
            }
     catch (error)
