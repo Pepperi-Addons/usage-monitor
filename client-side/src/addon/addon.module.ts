@@ -16,6 +16,7 @@ import { TranslateModule } from '@ngx-translate/core';
 import { HttpClientModule } from '@angular/common/http';
 import { PepDialogService } from '@pepperi-addons/ngx-lib/dialog';
 import { PepAddonService, PepCustomizationService, PepHttpService } from '@pepperi-addons/ngx-lib';
+import { PepDIMXModule } from '@pepperi-addons/ngx-composite-lib/dimx-export';
 
 @NgModule({
     declarations: [
@@ -35,7 +36,8 @@ import { PepAddonService, PepCustomizationService, PepHttpService } from '@peppe
         TranslateModule,
         MaterialModule,
         PepRemoteLoaderModule,
-        HttpClientModule
+        HttpClientModule,
+        PepDIMXModule
 
     ],
     providers: [PepHttpService, PepAddonService],

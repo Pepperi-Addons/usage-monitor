@@ -17,6 +17,21 @@
                     [visible]="true"
                     (buttonClick)="refreshButtonClicked($event)">
                 </pep-button>
+
+                <pep-button class="pep-spacing-element"
+                    value="{{'ExportToCSV' | translate}}"
+                    styleType="weak"
+                    styleStateType="system"
+                    sizeType="sm"
+                    classNames="title-md"
+                    [disabled]="false"
+                    iconName=""
+                    [visible]="true"
+                    (buttonClick)="export($event)">
+                </pep-button>
+
+                <pep-dimx #dimx [DIMXAddonUUID]="'00000000-0000-0000-0000-000000005a9e'" [DIMXResource]="'UsageMonitor'"></pep-dimx>
+
             </div>
         </pep-top-bar>
     </ng-container>

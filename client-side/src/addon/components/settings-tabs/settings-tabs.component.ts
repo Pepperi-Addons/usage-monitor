@@ -1,8 +1,9 @@
 import { TranslateService } from '@ngx-translate/core';
 import { PepDialogService, PepDialogData } from '@pepperi-addons/ngx-lib/dialog';
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, ViewChild } from '@angular/core';
 import { PepHttpService } from '@pepperi-addons/ngx-lib';
 import { IPepButtonClickEvent } from '@pepperi-addons/ngx-lib/button';
+import { DIMXComponent } from '@pepperi-addons/ngx-composite-lib/dimx-export';
 
 @Component({
   selector: 'addon-settings-tabs',
@@ -10,6 +11,7 @@ import { IPepButtonClickEvent } from '@pepperi-addons/ngx-lib/button';
   styleUrls: ['./settings-tabs.component.scss']
 })
 export class SettingsTabsComponent implements OnInit {
+    @ViewChild('dimx') dimx:DIMXComponent | undefined;
 
     tabs: Array<any>;
     activeTabIndex = 0;
@@ -69,4 +71,19 @@ export class SettingsTabsComponent implements OnInit {
   getRelationDataTabLabel(tab) {
     return Object.keys(tab)[0];
   }
+
+  export($event){
+    this.dimx?.DIMXExportRun({
+      DIMXExportFormat: "csv",
+      DIMXExportIncludeDeleted: false,
+      DIMXExportFileName: "export",
+      //DIMXExportFields: "",
+      DIMXExportDelimiter: ";"
+    });
+  }
+
+  onDIMXProcessDone($event) {
+    //
+  }
+  
 }
