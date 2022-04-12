@@ -45,6 +45,10 @@
     "DataTabHeader":"Data",
     "NucleusTransactions":"Nucleus Transactions",
     "NucleusTransactionsDescription":"Number of Transactions in memory",
+    
+    "NucleusPackagesTransactions":"Nucleus Packages Transactions",
+    "NucleusPackagesTransactionsDescription":"Number of Transactions of packages type in memory",
+
     "NucleusActivities":"Nucleus Activities",
     "NucleusActivitiesDescription":"Number of Activities in memory",
     "NucleusTransactionLines":"Nucleus Transaction Lines",

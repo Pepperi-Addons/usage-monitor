@@ -637,11 +637,14 @@ export async function collect_data(client: Client, request: Request) {
     let accountFieldsCount: any = null;
     let userDefinedTablesCount: any = null;
     let transactionsCount: any = null;
+    let transactionsPackagesCount: any = null;
+    let transactionsWithPackagesCount: any = null;
     let activitiesCount: any = null;
     let transactionLinesCount: any = null;
     let imagesCount: any = null;
     let userDefinedTablesLinesCount: any = null;
     let usersObjects: any[] = [];
+    let transactionsObjects: any[] = [];
 
 
     // Working users/buyers created at least one new activity in all_activities in the last month.
@@ -719,9 +722,11 @@ export async function collect_data(client: Client, request: Request) {
         papiClient.metaData.userDefinedTables.iter({include_deleted:false}).toArray()
             .then(x => userDefinedTablesCount = x.length)
             .catch(error => errors.push({object:'UserDefinedTables', error:('message' in error) ? error.message : 'general error'})),
+        /*
         papiClient.transactions.count({include_deleted:false})
             .then(x => transactionsCount = x)
             .catch(error => errors.push({object:'Transactions', error:('message' in error) ? error.message : 'general error'})),
+        */
         papiClient.activities.count({include_deleted:false})
             .then(x => activitiesCount = x)
             .catch(error => errors.push({object:'Activities', error:('message' in error) ? error.message : 'general error'})),
@@ -734,6 +739,19 @@ export async function collect_data(client: Client, request: Request) {
         papiClient.userDefinedTables.count({include_deleted:false})
             .then(x => userDefinedTablesLinesCount = x)
             .catch(error => errors.push({object:'UserDefinedTablesLines', error:('message' in error) ? error.message : 'general error'})),
+        //for filtering packages from transactions count
+        
+        papiClient.transactions.iter({include_deleted:false}).toArray()
+            .then(x => {
+                transactionsObjects = x;
+                transactionsWithPackagesCount = x.length;
+                if(transactionsObjects["Type"] == "Packages"){
+                    transactionsPackagesCount++;
+                }
+                transactionsCount= transactionsWithPackagesCount- transactionsPackagesCount;
+            })
+            .catch(error => errors.push({object:'transactions', error:('message' in error) ? error.message : 'general error'})),
+            
         papiClient.contacts.iter({include_deleted:false, where:'IsBuyer=true', fields:['InternalID']}).toArray()
             .then(async x => {
                 buyersObjects = x; 
@@ -841,6 +859,7 @@ export async function collect_data(client: Client, request: Request) {
         Items: itemsCount,
         LicensedUsers: distributorDataMaxEmployees,
         NucleusTransactions: transactionsCount,
+        NucleusPackagesTransactions: transactionsPackagesCount,
         NucleusActivities: activitiesCount,
         NucleusTransactionLines: transactionLinesCount,
         DatabaseAllActivities: null,
