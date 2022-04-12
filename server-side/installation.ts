@@ -7,7 +7,7 @@ If the result of your code is 'false' then return:
 {success:false, erroeMessage:{the reason why it is false}}
 The error Message is importent! it will be written in the audit log and help the user to understand what happen
 */
-import { PapiClient, CodeJob, AddonDataScheme } from "@pepperi-addons/papi-sdk";
+import { PapiClient, CodeJob, AddonDataScheme, Relation } from "@pepperi-addons/papi-sdk";
 import { Client, Request } from '@pepperi-addons/debug-server'
 import MyService from './my.service';
 import Semver from "semver";
@@ -266,6 +266,30 @@ const UsageMonitorSettings:AddonDataScheme = {
 export const UsageMonitorTable:AddonDataScheme = {
     Name: "UsageMonitor",
     Type: "data"
+}
+
+//creates a relation to DIMX
+async function DIMXRelation(client: Client){
+    const service = new MyService(client);
+    const papiClient = service.papiClient;
+
+    //Creating a relation with helath monitor
+    let addonUUID = client.AddonUUID;
+    let relation: Relation = {
+        "RelationName": "DataExportResource",
+        "AddonUUID": addonUUID,
+        "Name": "UsageDataExportCSV",
+        "Type": "AddonAPI",
+        "AddonRelativeURL": ""
+    }
+
+    try{
+        await papiClient.addons.data.relations.upsert(relation);
+    }
+    catch(ex){
+        console.log(`upsertRelation: ${ex}`);
+        throw new Error((ex as {message:string}).message);
+    }
 }
 
 async function UsageMonitorDailyTable(service) {
