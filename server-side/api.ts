@@ -185,9 +185,10 @@ async function GetDataForSUMAggregation(client, usageRelation, index, getRelatio
     let retObj=(Result[0]) ? Result[0] : undefined;
 
     let todayDate: Date = new Date();
-    let todayDateString= todayDate.toDateString();
+    let todayDateString= (todayDate.getDate()).toString();
+
     let firstElementDate= (Result[0]) ? Result[0]['CreationDateTime'] : undefined;
-    let firstElementDateString= firstElementDate ? (new Date(firstElementDate)).toDateString() : undefined;
+    let firstElementDateString= (firstElementDate) ? (((firstElementDate.split("-"))[2]).slice(0,2)).toString() : undefined;
 
     //checking if the first item in the array is from today or yesterday- if it is from today we take the second element in the array (from yesterday), else we take the first.
     //if the last item is from today
@@ -198,6 +199,8 @@ async function GetDataForSUMAggregation(client, usageRelation, index, getRelatio
                 let start = 1;
                 sum = aggregateData(Result, i, start);
                 retObj['RelationData']['Resources'][i]['Size'] = sum;
+                buildDescription(retObj, i);
+
             }
             //insert retObj to the exported array
             insert_Relation(retObj['RelationData'], getRelationsResultObject, relationsDataList);
@@ -211,6 +214,9 @@ async function GetDataForSUMAggregation(client, usageRelation, index, getRelatio
                 let start = 0;
                 sum = aggregateData(Result, i, start);
                 retObj['RelationData']['Resources'][i]['Size'] = sum;
+                buildDescription(retObj, i);
+                //retObj['RelationData']['Resources'][i]['Description']= 
+
             }
             //insert retObj to the exported array
             insert_Relation(retObj['RelationData'], getRelationsResultObject, relationsDataList);
@@ -218,6 +224,17 @@ async function GetDataForSUMAggregation(client, usageRelation, index, getRelatio
     }
 }
 
+
+function buildDescription(retObj, i){
+    let description= retObj['RelationData']['Resources'][i]['Description'];
+    let descriptionSlice= description.split(" ");
+    let activity= descriptionSlice[0];
+    let user = descriptionSlice[3];
+    let type = descriptionSlice[9];
+    let newDescription= `${activity} created by ${user} in the last 7 days - ${type}`;
+    retObj['RelationData']['Resources'][i]['Description']= newDescription;
+
+}
 
 //If aggregation function is last
 async function GetDataForLASTAggregation(client, usageRelation, index, getRelationsResultObject, relationsDataList){
@@ -255,7 +272,7 @@ function insert_Relation(resource, getRelationsResultObject, relationsDataList){
     
     try {
             if (["Data", "Setup", "Usage"].includes(resource.Title)) {
-                getRelationsResultObject[resource.Title] = getRelationsResultObject[resource.Title].concat(resource.Resources[0]);
+                getRelationsResultObject[resource.Title] = getRelationsResultObject[resource.Title].concat(resource.Resources);
             }
             else {
                 // Allow multiple relations to reside in the same tab (title)
@@ -263,12 +280,10 @@ function insert_Relation(resource, getRelationsResultObject, relationsDataList){
                 if (index > -1) {
 
                     // Add resources to existing one in same tab
-                    relationsDataList[index][resource.Title] = relationsDataList[index][resource.Title].concat(resource.Resources[0]);
+                    relationsDataList[index][resource.Title] = relationsDataList[index][resource.Title].concat(resource.Resources);
                 }
                 else {
                     relationsDataList.push({
-
-/////                    //was resources[0]
                     [resource.Title]: resource.Resources
                 })}}
            }
