@@ -192,39 +192,38 @@ async function GetDataForSUMAggregation(client, usageRelation, index, getRelatio
 
     //checking if the first item in the array is from today or yesterday- if it is from today we take the second element in the array (from yesterday), else we take the first.
     //if the last item is from today
-    if(retObj && firstElementDateString && firstElementDateString == todayDateString){
-        if(Result[1]){
-            //check sum for every data in resources
-            for(let i= 0; i < retObj['RelationData']['Resources'].length; i++){
-                let start = 1;
-                sum = aggregateData(Result, i, start);
-                retObj['RelationData']['Resources'][i]['Size'] = sum;
-                buildDescription(retObj, i);
-
+    if(retObj){
+        if(firstElementDateString && firstElementDateString == todayDateString){
+            if(Result[1]){
+                //check sum for every data in resources
+                for(let i= 0; i < retObj['RelationData']['Resources'].length; i++){
+                    let start = 1;
+                    sum = aggregateData(Result, i, start);
+                    retObj['RelationData']['Resources'][i]['Size'] = sum;
+                    retObj['RelationData']['Resources'][i]['Description'] = "sum of " + retObj['RelationData']['Resources'][i]['Description'] + " for the last 7 days";
+                }
+                //insert retObj to the exported array
+                insert_Relation(retObj['RelationData'], getRelationsResultObject, relationsDataList);
             }
-            //insert retObj to the exported array
-            insert_Relation(retObj['RelationData'], getRelationsResultObject, relationsDataList);
         }
-    }
-    //if the last item is from yesterday
-    else{
-        if(Result[0] && retObj){
-            //check sum for every data in resources
-            for(let i= 0; i < retObj['RelationData']['Resources'].length; i++){
-                let start = 0;
-                sum = aggregateData(Result, i, start);
-                retObj['RelationData']['Resources'][i]['Size'] = sum;
-                buildDescription(retObj, i);
-                //retObj['RelationData']['Resources'][i]['Description']= 
-
+        //if the last item is from yesterday
+        else{
+            if(Result[0]){
+                //check sum for every data in resources
+                for(let i= 0; i < retObj['RelationData']['Resources'].length; i++){
+                    let start = 0;
+                    sum = aggregateData(Result, i, start);
+                    retObj['RelationData']['Resources'][i]['Size'] = sum;
+                    retObj['RelationData']['Resources'][i]['Description'] = "sum of " + retObj['RelationData']['Resources'][i]['Description'] + " for the last 7 days";
+                }
+                //insert retObj to the exported array
+                insert_Relation(retObj['RelationData'], getRelationsResultObject, relationsDataList);
             }
-            //insert retObj to the exported array
-            insert_Relation(retObj['RelationData'], getRelationsResultObject, relationsDataList);
         }
     }
 }
 
-
+/*
 function buildDescription(retObj, i){
     let description= retObj['RelationData']['Resources'][i]['Description'];
     let descriptionSlice= description.split(" ");
@@ -233,8 +232,8 @@ function buildDescription(retObj, i){
     let type = descriptionSlice[9];
     let newDescription= `${activity} created by ${user} in the last 7 days - ${type}`;
     retObj['RelationData']['Resources'][i]['Description']= newDescription;
-
 }
+*/
 
 //If aggregation function is last
 async function GetDataForLASTAggregation(client, usageRelation, index, getRelationsResultObject, relationsDataList){
@@ -262,7 +261,7 @@ function aggregateData(Result, i, start){
     let sum = 0;
     //checking for a span of a week
     for(let index= start; index < 8;index++){
-        (Result[index]) ? sum+=Result[index]['RelationData']['Resources'][i]['Size'] : undefined;
+        (Result[index]) ? sum += Result[index]['RelationData']['Resources'][i]['Size'] : undefined;
     }
     return sum;
 }
