@@ -645,6 +645,8 @@ export async function collect_data(client: Client, request: Request) {
     let userDefinedTablesLinesCount: any = null;
     let usersObjects: any[] = [];
     let transactionsObjects: any[] = [];
+    let packageType: any[] = [];
+    
 
 
     // Working users/buyers created at least one new activity in all_activities in the last month.
@@ -657,9 +659,7 @@ export async function collect_data(client: Client, request: Request) {
     // See: https://pepperi.atlassian.net/browse/DI-18019
     const lastMonthStringWithoutTime = lastMonthString.split('T')[0] + 'Z';
     const allActivitiesUsersAndBuyersTask:any =  papiClient.allActivities.count({where:"CreationDateTime>'" + lastMonthStringWithoutTime + "'", group_by:"CreatorInternalID"})
-        .catch(error => errors.push({object:'AllActivitiesUsersAndBuyers', error:('message' in error) ? error.message : 'general error'}));
-
-    
+        .catch(error => errors.push({object:'AllActivitiesUsersAndBuyers', error:('message' in error) ? error.message : 'general error'}));    
     
     let workingUsers = 0;
     let workingBuyers = 0;
@@ -668,7 +668,7 @@ export async function collect_data(client: Client, request: Request) {
     let dataAdditionalRelations: any = null;
     let usageAdditionalRelations: any = null;
     let setupAdditionalRelations: any = null;
-
+    
 
     await Promise.all([
         /*
@@ -696,11 +696,24 @@ export async function collect_data(client: Client, request: Request) {
             .then(x => profilesCount = x)
             .catch(error => errors.push({object:'Profiles', error:('message' in error) ? error.message : 'general error'})),
         papiClient.metaData.type('transactions').types.get()
-            .then(x => transactionTypesCount = x.length)
+            .then(async x => {
+                let transactionsTypes = x;
+                transactionTypesCount = x.length
+                for(let index = 0; index< transactionsTypes.length; index++){
+                    let typeID= transactionsTypes[index]['TypeID'];
+                    const url = `/meta_data/Transactions/Types/${typeID}/settings`;
+                    let getDataType = await service.papiClient.get(url);
+                    if(getDataType['Type']['ID'] == 3){
+                        packageType.push(transactionsTypes['TypeID']);
+                    }
+                }
+            })
             .catch(error => errors.push({object:'TransactionTypes', error:('message' in error) ? error.message : 'general error'})),
+
         papiClient.metaData.type('activities').types.get()
             .then(x => activityTypesCount = x.length)
             .catch(error => errors.push({object:'ActivityTypes', error:('message' in error) ? error.message : 'general error'})),
+
         papiClient.metaData.type('accounts').types.get()
             .then(x => accountTypesCount = x.length)
             .catch(error => errors.push({object:'AccountTypes', error:('message' in error) ? error.message : 'general error'})),
@@ -722,11 +735,11 @@ export async function collect_data(client: Client, request: Request) {
         papiClient.metaData.userDefinedTables.iter({include_deleted:false}).toArray()
             .then(x => userDefinedTablesCount = x.length)
             .catch(error => errors.push({object:'UserDefinedTables', error:('message' in error) ? error.message : 'general error'})),
-        /*
-        papiClient.transactions.count({include_deleted:false})
+        
+        papiClient.transactions.count({include_deleted:false, where:`InternalID not in ${packageType}`})
             .then(x => transactionsCount = x)
             .catch(error => errors.push({object:'Transactions', error:('message' in error) ? error.message : 'general error'})),
-        */
+        
         papiClient.activities.count({include_deleted:false})
             .then(x => activitiesCount = x)
             .catch(error => errors.push({object:'Activities', error:('message' in error) ? error.message : 'general error'})),
@@ -740,7 +753,7 @@ export async function collect_data(client: Client, request: Request) {
             .then(x => userDefinedTablesLinesCount = x)
             .catch(error => errors.push({object:'UserDefinedTablesLines', error:('message' in error) ? error.message : 'general error'})),
         //for filtering packages from transactions count
-        
+        /*
         papiClient.transactions.iter({include_deleted:false}).toArray()
             .then(x => {
                 transactionsObjects = x;
@@ -751,7 +764,7 @@ export async function collect_data(client: Client, request: Request) {
                 transactionsCount= transactionsWithPackagesCount- transactionsPackagesCount;
             })
             .catch(error => errors.push({object:'transactions', error:('message' in error) ? error.message : 'general error'})),
-            
+        */
         papiClient.contacts.iter({include_deleted:false, where:'IsBuyer=true', fields:['InternalID']}).toArray()
             .then(async x => {
                 buyersObjects = x; 
