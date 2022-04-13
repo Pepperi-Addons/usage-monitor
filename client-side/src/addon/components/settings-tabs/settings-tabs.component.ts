@@ -72,7 +72,7 @@ export class SettingsTabsComponent implements OnInit {
     return Object.keys(tab)[0];
   }
 
-  export($event){
+  export(event){
     this.dimx?.DIMXExportRun({
       DIMXExportFormat: "csv",
       DIMXExportIncludeDeleted: false,

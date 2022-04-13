@@ -154,6 +154,9 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
 export async function upgrade(client: Client, request: Request): Promise<any> {
     try {
         const service = new MyService(client);
+
+        //creates a relation with DIMX
+        DIMXRelation(client);
         
         console.log("About to get settings data...")
         const distributor = await service.GetDistributor(service.papiClient);
