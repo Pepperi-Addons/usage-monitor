@@ -28,13 +28,11 @@ export async function install(client: Client, request: Request): Promise<any> {
         }
         console.log('Pepperi Usage addon table and code job installation succeeded.');
 
-
         // Install scheme for Pepperi Usage Monitor settings
         try {
             console.log(`About to create settings table ${UsageMonitorSettings.Name}...`)
             const UsageMonitorSettingsResponse = await service.papiClient.addons.data.schemes.post(UsageMonitorSettings);            
             console.log('Settings table installed successfully.');
-
         }
         catch (err) {
             if (err instanceof Error)
@@ -51,7 +49,6 @@ export async function install(client: Client, request: Request): Promise<any> {
 
         const usageCodeJob = await service.papiClient.codeJobs.uuid(data[retValUsageMonitor["codeJobName"]]).get();
 
-
         //creating daily usage table
         UsageMonitorDailyTable(service);
 
@@ -63,9 +60,7 @@ export async function install(client: Client, request: Request): Promise<any> {
         }
         console.log('Pepperi Usage addon table and code job installation succeeded.');
 
-        
         data[dailyRetValUsageMonitor["dailyCodeJobName"]] = dailyRetValUsageMonitor["dailyCodeJobUUID"];
-
 
         // Add code job info to settings table.
         const settingsBodyADAL= {
@@ -75,6 +70,8 @@ export async function install(client: Client, request: Request): Promise<any> {
 
         console.log(`About to add data to settings table ${UsageMonitorSettings.Name}...`);
         const settingsResponse = await service.papiClient.addons.data.uuid(client.AddonUUID).table('UsageMonitorSettings').upsert(settingsBodyADAL);
+
+        DIMXRelation(client);
 
         console.log('Pepperi Usage addon installation succeeded.');
         return {
@@ -132,7 +129,6 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
         const responseSettingsTable = await service.papiClient.post('/addons/data/schemes/UsageMonitorSettings/purge', null, headersADAL);
         const responseDailyUsageMonitorTable = await service.papiClient.post('/addons/data/schemes/UsageMonitorDaily/purge', null, headersADAL);
 
-
         console.log('pepperi-usage uninstallation succeeded.');
 
         return {
@@ -154,10 +150,14 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
 export async function upgrade(client: Client, request: Request): Promise<any> {
     try {
         const service = new MyService(client);
+        //If DIMX relation doesn`t exist, create the relation
+        const url = `/addons/data/relations?where=RelationName='DataExportResource'`;
+        let getRelationData = await service.papiClient.get(url);
 
-        //creates a relation with DIMX
-        DIMXRelation(client);
-        
+        if(getRelationData.length == 0){
+            DIMXRelation(client);
+        }
+
         console.log("About to get settings data...")
         const distributor = await service.GetDistributor(service.papiClient);
         const settingsData = await service.papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorSettings.Name).key(distributor.InternalID.toString()).get();
@@ -257,8 +257,6 @@ const UsageMonitorDaily:AddonDataScheme = {
         }
         
     } as any
-    
-
 }
 
 const UsageMonitorSettings:AddonDataScheme = {
@@ -354,7 +352,6 @@ async function UpsertDailyCodeJob(service, usageCodeJob){
     }
 
     return retVal;
-
 }
 
 async function InstallUsageMonitor(service, client){
@@ -477,7 +474,6 @@ function getWeeklyCronExpression(token) {
         rand + "-59/60 0 * * SUN",
         rand + "-59/60 1 * * SUN" ,
         rand + "-59/60 2 * * SUN" 
-
     ]
     const index = Math.floor(Math.random() * expressions.length);
     return expressions[index];
