@@ -4,22 +4,38 @@ import { UsageMonitorTable } from './installation'
 import { createPepperiUsage } from './crm-connector'
 import { get } from 'lodash';
 
+import peach from 'parallel-each';
 
 export async function get_relations_daily_data(client:Client, request:Request){
     const service = new MyService(client);
     const papiClient = service.papiClient;
-    const relations = await papiClient.addons.data.relations.iter({where: "RelationName='UsageMonitor'"});
-    let ExpirationDateTime: Date= new Date(new Date().setFullYear(new Date().getFullYear() + 1));
+    const url = `/addons/data/relations?where=RelationName='UsageMonitor'`;
+    let relations = await service.papiClient.get(url);
 
-    for await (const relation of relations)
-    {
+    let ExpirationDateTime: Date= new Date(new Date().setFullYear(new Date().getFullYear() + 1));
+    try{
+        await peach(relations, async(subRelations, i)=>{
+            await insertRelationData(service, client, subRelations, ExpirationDateTime)
+        }, await relations.length);
+    }
+
+    catch(ex){
+        console.log("Error:"+`${ex}`);
+    }
+}
+
+
+async function insertRelationData(service, client, subRelations, ExpirationDateTime){
         let UUID:string= GenerateGuid();
 
-        const url = `/addons/api/${relation.AddonUUID}${relation.AddonRelativeURL?.startsWith('/') ? relation.AddonRelativeURL : '/' + relation.AddonRelativeURL}`;
+        const url = `/addons/api/async/${subRelations.AddonUUID}${subRelations.AddonRelativeURL?.startsWith('/') ? subRelations.AddonRelativeURL : '/' + subRelations.AddonRelativeURL}`;
         let getRelationData = await service.papiClient.get(url);
-        let title = getRelationData["Title"];
-        let resource = getRelationData["Resources"];
-        let AddonUUID_RelationName = relation.AddonUUID+"_"+relation["Name"];
+        let auditLogUUID = getRelationData['ExecutionUUID'];
+        let auditResult = await getReturnObjectFromAudit(auditLogUUID, service);
+
+        let title = auditResult["Title"];
+        let resource = auditResult["Resources"];
+        let AddonUUID_RelationName = subRelations.AddonUUID+"_"+subRelations["Name"];
         let RelationData = {
             Title: title,
             Resources: resource
@@ -30,13 +46,29 @@ export async function get_relations_daily_data(client:Client, request:Request){
             AddonUUID_RelationName: AddonUUID_RelationName,
             ExpirationDateTime: ExpirationDateTime,
             RelationData: RelationData
-        }
-        
+        }  
         await service.papiClient.addons.data.uuid(client.AddonUUID).table('UsageMonitorDaily').upsert(insertRelation);
-
-    }
-
 }
+
+//checking audit log to check when it
+async function getReturnObjectFromAudit(auditLogUUID: string, service): Promise<any> {
+    return new Promise<any>((resolve) => {
+        let numOfTries = 1;
+        const interval = setInterval(async () => {
+            const logRes = await service.papiClient.auditLogs.uuid(auditLogUUID).get();
+            if (logRes && logRes.Status && logRes.Status.Name !== 'InProgress' && logRes.Status.Name !== 'InRetry') {
+                clearInterval(interval);
+                const resultObj = JSON.parse(logRes.AuditInfo.ResultObject);
+                resolve(resultObj);
+            }
+            else if(++numOfTries > 16) {
+                clearInterval(interval);
+                resolve(undefined);
+            }
+        }, 30000);
+    });
+}
+
 
 //for generating a new UUID
 function GenerateGuid() {
@@ -416,6 +448,10 @@ function get_object_value(obj, requestedKey) {
             }
         }
 
+        if(objectValue['Description']){
+            objectValue = objectValue['Size'];
+        }
+
         return objectValue;
     }
     catch (error)
@@ -460,7 +496,7 @@ export async function get_all_data_for_key(client: Client, request: Request) {
         return {
             success: false,
             errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
-        } 
+        }
     }
 }
 
