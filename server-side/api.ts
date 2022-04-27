@@ -255,17 +255,6 @@ async function GetDataForSUMAggregation(client, usageRelation, index, getRelatio
     }
 }
 
-/*
-function buildDescription(retObj, i){
-    let description= retObj['RelationData']['Resources'][i]['Description'];
-    let descriptionSlice= description.split(" ");
-    let activity= descriptionSlice[0];
-    let user = descriptionSlice[3];
-    let type = descriptionSlice[9];
-    let newDescription= `${activity} created by ${user} in the last 7 days - ${type}`;
-    retObj['RelationData']['Resources'][i]['Description']= newDescription;
-}
-*/
 
 //If aggregation function is last
 async function GetDataForLASTAggregation(client, usageRelation, index, getRelationsResultObject, relationsDataList){
