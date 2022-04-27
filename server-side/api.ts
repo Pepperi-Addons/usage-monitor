@@ -225,32 +225,29 @@ async function GetDataForSUMAggregation(client, usageRelation, index, getRelatio
     if(retObj){
         if(firstElementDateString && firstElementDateString == todayDateString){
             if(Result[1]){
-                //check sum for every data in resources
-                for(let i= 0; i < retObj['RelationData']['Resources'].length; i++){
-                    let start = 1;
-                    sum = aggregateData(Result, i, start);
-                    retObj['RelationData']['Resources'][i]['Size'] = sum;
-                    retObj['RelationData']['Resources'][i]['Description'] = "sum of " + retObj['RelationData']['Resources'][i]['Description'] + " for the last 7 days";
-                }
-                //insert retObj to the exported array
-                insert_Relation(retObj['RelationData'], getRelationsResultObject, relationsDataList);
+                let start = 1;
+                buildRelation(Result, retObj, start, sum, getRelationsResultObject, relationsDataList);
             }
         }
         //if the last item is from yesterday
         else{
             if(Result[0]){
-                //check sum for every data in resources
-                for(let i= 0; i < retObj['RelationData']['Resources'].length; i++){
-                    let start = 0;
-                    sum = aggregateData(Result, i, start);
-                    retObj['RelationData']['Resources'][i]['Size'] = sum;
-                    retObj['RelationData']['Resources'][i]['Description'] = "sum of " + retObj['RelationData']['Resources'][i]['Description'] + " for the last 7 days";
-                }
-                //insert retObj to the exported array
-                insert_Relation(retObj['RelationData'], getRelationsResultObject, relationsDataList);
+                let start = 0;
+                buildRelation(Result, retObj, start, sum, getRelationsResultObject, relationsDataList);
             }
         }
     }
+}
+
+function buildRelation(Result, retObj, start, sum, getRelationsResultObject, relationsDataList){
+    //check sum for every data in resources
+    for(let i= 0; i < retObj['RelationData']['Resources'].length; i++){
+        sum = aggregateData(Result, i, start);
+        retObj['RelationData']['Resources'][i]['Size'] = sum;
+        retObj['RelationData']['Resources'][i]['Description'] = "sum of " + retObj['RelationData']['Resources'][i]['Description'] + " for the last 7 days";
+    }
+    //insert retObj to the exported array
+    insert_Relation(retObj['RelationData'], getRelationsResultObject, relationsDataList);
 }
 
 
