@@ -8,11 +8,9 @@ import peach from 'parallel-each';
 
 export async function get_relations_daily_data(client:Client, request:Request){
     const service = new MyService(client);
-    const papiClient = service.papiClient;
-    const url = `/addons/data/relations?where=RelationName='UsageMonitor'`;
-    let relations = await service.papiClient.get(url);
+    let relations = await service.papiClient.addons.data.relations.iter({where:'RelationName=UsageMonitor'}).toArray();
+    let ExpirationDateTime: Date = new Date(new Date().setFullYear(new Date().getFullYear() + 1));
 
-    let ExpirationDateTime: Date= new Date(new Date().setFullYear(new Date().getFullYear() + 1));
     try{
         await peach(relations, async(subRelations, i)=>{
             await insertRelationData(service, client, subRelations, ExpirationDateTime)
@@ -35,7 +33,7 @@ async function insertRelationData(service, client, subRelations, ExpirationDateT
 
         let title = auditResult["Title"];
         let resource = auditResult["Resources"];
-        let AddonUUID_RelationName = subRelations.AddonUUID+"_"+subRelations["Name"];
+        let AddonUUID_RelationName = subRelations.AddonUUID + "_" + subRelations["Name"];
         let RelationData = {
             Title: title,
             Resources: resource
@@ -50,7 +48,7 @@ async function insertRelationData(service, client, subRelations, ExpirationDateT
         await service.papiClient.addons.data.uuid(client.AddonUUID).table('UsageMonitorDaily').upsert(insertRelation);
 }
 
-//checking audit log to check when it
+// polling audit log until getting the final result success or failure
 async function getReturnObjectFromAudit(auditLogUUID: string, service): Promise<any> {
     return new Promise<any>((resolve) => {
         let numOfTries = 1;
@@ -437,7 +435,9 @@ function get_object_value(obj, requestedKey) {
             }
         }
 
-        if(objectValue['Description']){
+        //If objectValue is in a different format (description + size instead of size)- then we take only the size field 
+        //(can happan in case of a relation that doesn`t appear in a relation tab)
+        if(objectValue != null && objectValue['Size'] != null){
             objectValue = objectValue['Size'];
         }
 
