@@ -4,26 +4,39 @@ import { UsageMonitorTable } from './installation'
 import { createPepperiUsage } from './crm-connector'
 import { get } from 'lodash';
 
+import peach from 'parallel-each';
 
 export async function get_relations_daily_data(client:Client, request:Request){
     const service = new MyService(client);
-    const papiClient = service.papiClient;
-    const relations = papiClient.addons.data.relations.iter({where: "RelationName='UsageMonitor'"});
-    let ExpirationDateTime: Date= new Date(new Date().setFullYear(new Date().getFullYear() + 1));
+    let relations = await service.papiClient.addons.data.relations.iter({where:'RelationName=UsageMonitor'}).toArray();
+    let ExpirationDateTime: Date = new Date(new Date().setFullYear(new Date().getFullYear() + 1));
 
-    for await (const relation of relations)
-    {
+    try{
+        await peach(relations, async(subRelations, i)=>{
+            await insertRelationData(service, client, subRelations, ExpirationDateTime)
+        }, await relations.length);
+    }
+
+    catch(ex){
+        console.log("Error:"+`${ex}`);
+    }
+}
+
+
+async function insertRelationData(service, client, subRelations, ExpirationDateTime){
         let UUID:string= GenerateGuid();
 
-        const url = `/addons/api/${relation.AddonUUID}${relation.AddonRelativeURL?.startsWith('/') ? relation.AddonRelativeURL : '/' + relation.AddonRelativeURL}`;
+        const url = `/addons/api/async/${subRelations.AddonUUID}${subRelations.AddonRelativeURL?.startsWith('/') ? subRelations.AddonRelativeURL : '/' + subRelations.AddonRelativeURL}`;
         let getRelationData = await service.papiClient.get(url);
-        let title = getRelationData["Title"];
-        let resource = getRelationData["Resources"];
-        let AddonUUID_RelationName = relation.AddonUUID+"_"+relation["Name"];
+        let auditLogUUID = getRelationData['ExecutionUUID'];
+        let auditResult = await getReturnObjectFromAudit(auditLogUUID, service);
+
+        let title = auditResult["Title"];
+        let resource = auditResult["Resources"];
+        let AddonUUID_RelationName = subRelations.AddonUUID + "_" + subRelations["Name"];
         let RelationData = {
             Title: title,
-            Resources:[
-                resource]
+            Resources: resource
         }
         
         let insertRelation = {
@@ -31,13 +44,29 @@ export async function get_relations_daily_data(client:Client, request:Request){
             AddonUUID_RelationName: AddonUUID_RelationName,
             ExpirationDateTime: ExpirationDateTime,
             RelationData: RelationData
-        }
-        
+        }  
         await service.papiClient.addons.data.uuid(client.AddonUUID).table('UsageMonitorDaily').upsert(insertRelation);
-
-    }
-
 }
+
+// polling audit log until getting the final result success or failure
+async function getReturnObjectFromAudit(auditLogUUID: string, service): Promise<any> {
+    return new Promise<any>((resolve) => {
+        let numOfTries = 1;
+        const interval = setInterval(async () => {
+            const logRes = await service.papiClient.auditLogs.uuid(auditLogUUID).get();
+            if (logRes && logRes.Status && logRes.Status.Name !== 'InProgress' && logRes.Status.Name !== 'InRetry') {
+                clearInterval(interval);
+                const resultObj = JSON.parse(logRes.AuditInfo.ResultObject);
+                resolve(resultObj);
+            }
+            else if(++numOfTries > 16) {
+                clearInterval(interval);
+                resolve(undefined);
+            }
+        }, 30000);
+    });
+}
+
 
 //for generating a new UUID
 function GenerateGuid() {
@@ -141,7 +170,7 @@ export async function get_relations_data(client: Client) {
     await service.papiClient.addons.data.relations.iter({where:'RelationName=UsageMonitor'}).toArray()
     .then(async x => {
         let usageRelation = x;
-        for(let index=0;index<usageRelation.length;index++){
+        for(let index=0; index < usageRelation.length; index++){
             //If reporting period is weekly
             if((usageRelation[index]['ReportingPeriod']== "Weekly" || (!usageRelation[index]['ReportingPeriod']) ) ){
                 //If Aggregation Function is sum, sum all data from last week.
@@ -168,7 +197,7 @@ async function GetDataForSUMAggregation(client, usageRelation, index, getRelatio
     const papiClient = service.papiClient;
 
     let sum: number = 0;
-    let id = usageRelation[index]['AddonUUID']+"_"+usageRelation[index]["Name"];
+    let id = usageRelation[index]['AddonUUID'] + "_"+usageRelation[index]["Name"];
 
     //checking for a span of a week
     let startTime: Date = new Date();
@@ -183,12 +212,44 @@ async function GetDataForSUMAggregation(client, usageRelation, index, getRelatio
     let Params: string = `AddonUUID_RelationName='${id}' and ${dateCheck}`;
 
     const Result = await papiClient.addons.data.uuid(usageMonitorUUID).table(dailyUsageTable).iter({where: Params, order_by: "CreationDateTime DESC"}).toArray();
+    let retObj = (Result[0]) ? Result[0] : undefined;
 
-    for(let i=0; i<Result[0]['RelationData']['Resources'][0].length; i++){
-        sum = aggregateData(Result, i);
-        Result[1]['RelationData']['Resources'][0][i]['Size'] = sum;
+    let todayDate: Date = new Date();
+    let todayDateString = (todayDate.getDate()).toString();
+
+    //extract the first element from Result in order to check if its date is from today or yesterday
+    let firstElementDate = (Result[0]) ? Result[0]['CreationDateTime'] : undefined;
+    //extract only the day from the date string
+    let firstElementDateString = (firstElementDate) ? (((firstElementDate.split("-"))[2]).slice(0,2)).toString() : undefined;
+
+    //checking if the first item in the array is from today or yesterday- if it is from today we take the second element in the array (from yesterday), else we take the first.
+    //if the last item is from today
+    if(retObj){
+        if(firstElementDateString && firstElementDateString == todayDateString){
+            if(Result[1]){
+                let start = 1;
+                buildRelation(Result, retObj, start, sum, getRelationsResultObject, relationsDataList);
+            }
+        }
+        //if the last item is from yesterday
+        else{
+            if(Result[0]){
+                let start = 0;
+                buildRelation(Result, retObj, start, sum, getRelationsResultObject, relationsDataList);
+            }
+        }
     }
-    insert_Relation(Result[1]['RelationData'], getRelationsResultObject, relationsDataList);
+}
+
+function buildRelation(Result, retObj, start, sum, getRelationsResultObject, relationsDataList){
+    //check sum for every data in resources
+    for(let i= 0; i < retObj['RelationData']['Resources'].length; i++){
+        sum = aggregateData(Result, i, start);
+        retObj['RelationData']['Resources'][i]['Size'] = sum;
+        retObj['RelationData']['Resources'][i]['Description'] = "sum of " + retObj['RelationData']['Resources'][i]['Description'] + " for the last 7 days";
+    }
+    //insert retObj to the exported array
+    insert_Relation(retObj['RelationData'], getRelationsResultObject, relationsDataList);
 }
 
 
@@ -196,7 +257,7 @@ async function GetDataForSUMAggregation(client, usageRelation, index, getRelatio
 async function GetDataForLASTAggregation(client, usageRelation, index, getRelationsResultObject, relationsDataList){
     const service = new MyService(client);
     const papiClient = service.papiClient;
-    let id= usageRelation[index]['AddonUUID']+"_"+usageRelation[index]["Name"];
+    let id = usageRelation[index]['AddonUUID'] + "_" + usageRelation[index]["Name"];
 
     let Params: string = `where=AddonUUID_RelationName='${id}'&order_by=CreationDateTime DESC&page_size=1`;
 
@@ -206,19 +267,19 @@ async function GetDataForLASTAggregation(client, usageRelation, index, getRelati
 
     const Result = await papiClient.get(`/addons/data/${Url}`);
 
-    let lastData = Result[0]['RelationData'];
+    let lastData = (Result[0]) ? Result[0]['RelationData'] : undefined;
 
     insert_Relation(lastData, getRelationsResultObject, relationsDataList);
-
 }
 
 
 
 //If agrregation function is sum- sum all of the data from the relevant field.
-function aggregateData(Result, i){
+function aggregateData(Result, i, start){
     let sum = 0;
-    for(let index=1;index<8;index++){
-        (Result[index])? sum+=Result[index]['RelationData']['Resources'][0][i]['Size'] :undefined;
+    //checking for a span of a week
+    for(let index= start; index < 8;index++){
+        (Result[index]) ? sum += Result[index]['RelationData']['Resources'][i]['Size'] : undefined;
     }
     return sum;
 }
@@ -228,7 +289,7 @@ function insert_Relation(resource, getRelationsResultObject, relationsDataList){
     
     try {
             if (["Data", "Setup", "Usage"].includes(resource.Title)) {
-                getRelationsResultObject[resource.Title] = getRelationsResultObject[resource.Title].concat(resource.Resources[0]);
+                getRelationsResultObject[resource.Title] = getRelationsResultObject[resource.Title].concat(resource.Resources);
             }
             else {
                 // Allow multiple relations to reside in the same tab (title)
@@ -236,11 +297,11 @@ function insert_Relation(resource, getRelationsResultObject, relationsDataList){
                 if (index > -1) {
 
                     // Add resources to existing one in same tab
-                    relationsDataList[index][resource.Title] = relationsDataList[index][resource.Title].concat(resource.Resources[0]);
+                    relationsDataList[index][resource.Title] = relationsDataList[index][resource.Title].concat(resource.Resources);
                 }
                 else {
                     relationsDataList.push({
-                    [resource.Title]: resource.Resources[0]
+                    [resource.Title]: resource.Resources
                 })}}
            }
     catch (error)
@@ -373,6 +434,12 @@ function get_object_value(obj, requestedKey) {
             }
         }
 
+        //If objectValue is in a different format (description + size instead of size)- then we take only the size field 
+        //(can happan in case of a relation that doesn`t appear in a relation tab)
+        if(objectValue != null && objectValue['Size'] != null){
+            objectValue = objectValue['Size'];
+        }
+
         return objectValue;
     }
     catch (error)
@@ -417,7 +484,7 @@ export async function get_all_data_for_key(client: Client, request: Request) {
         return {
             success: false,
             errorMessage: ('message' in error) ? error.message : 'Unknown error occurred, see logs.',
-        } 
+        }
     }
 }
 
@@ -786,8 +853,8 @@ export async function collect_data(client: Client, request: Request) {
             })
             .catch(error => errors.push({object:'ActualUsers', error:('message' in error) ? error.message : 'general error'})),     
 
-        get_relations_data(client)
-            .then(x => { 
+        await get_relations_data(client)
+            .then( async x => { 
                 relationsData = (x as any).Relations; 
                 dataAdditionalRelations = (x as any).Data;
                 usageAdditionalRelations = (x as any).Usage;
