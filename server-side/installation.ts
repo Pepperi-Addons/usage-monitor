@@ -1,8 +1,6 @@
-
 /*
 The return object format MUST contain the field 'success':
 {success:true}
-
 If the result of your code is 'false' then return:
 {success:false, erroeMessage:{the reason why it is false}}
 The error Message is importent! it will be written in the audit log and help the user to understand what happen
@@ -71,7 +69,11 @@ export async function install(client: Client, request: Request): Promise<any> {
         console.log(`About to add data to settings table ${UsageMonitorSettings.Name}...`);
         const settingsResponse = await service.papiClient.addons.data.uuid(client.AddonUUID).table('UsageMonitorSettings').upsert(settingsBodyADAL);
 
+        //creating a relation with DIMX
         DIMXRelation(client);
+
+        //creating a relation with health monitor
+        healthMonitorRelation(client);
 
         console.log('Pepperi Usage addon installation succeeded.');
         return {
@@ -151,11 +153,19 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
     try {
         const service = new MyService(client);
         //If DIMX relation doesn`t exist, create the relation
-        const url = `/addons/data/relations?where=RelationName='DataExportResource'`;
-        let getRelationData = await service.papiClient.get(url);
+        const dimxUrl = `/addons/data/relations?where=RelationName='DataExportResource'`;
+        let getDIMXRelationData = await service.papiClient.get(dimxUrl);
 
-        if(getRelationData.length == 0){
+        if(getDIMXRelationData.length == 0){
             DIMXRelation(client);
+        }
+
+        //If health monitor relation doesn`t exist, create the relation
+        const healthMonitorUrl = `/addons/data/relations?where=RelationName='HealthMonitor'`;
+        let getHealthMonitorRelationData = await service.papiClient.get(healthMonitorUrl);
+
+        if(getHealthMonitorRelationData.length == 0){
+            healthMonitorRelation(client);
         }
 
         console.log("About to get settings data...")
@@ -274,7 +284,6 @@ async function DIMXRelation(client: Client){
     const service = new MyService(client);
     const papiClient = service.papiClient;
 
-    //Creating a relation with helath monitor
     let addonUUID = client.AddonUUID;
     let relation: Relation = {
         "RelationName": "DataExportResource",
@@ -282,6 +291,29 @@ async function DIMXRelation(client: Client){
         "Name": "UsageDataExportCSV",
         "Type": "AddonAPI",
         "AddonRelativeURL": ""
+    }
+
+    try{
+        await papiClient.addons.data.relations.upsert(relation);
+    }
+    catch(ex){
+        console.log(`upsertRelation: ${ex}`);
+        throw new Error((ex as {message:string}).message);
+    }
+}
+
+//creates a relation to health monitor
+async function healthMonitorRelation(client: Client){
+    const service = new MyService(client);
+    const papiClient = service.papiClient;
+
+    let addonUUID = client.AddonUUID;
+    let relation: Relation = {
+        "RelationName": "HealthMonitor",
+        "AddonUUID": addonUUID,
+        "Name": "MonitorErrors",
+        "Type": "AddonAPI",
+        "AddonRelativeURL": "/api/MonitorErrors"
     }
 
     try{

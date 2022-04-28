@@ -6,6 +6,76 @@ import { get } from 'lodash';
 
 import peach from 'parallel-each';
 
+//The function is called by health monitor relation
+//If activities/transactions/UTDs count crossed the defined limit, print an error
+export async function MonitorErrors(client: Client, request: Request){
+    const service = new MyService(client);
+    let InternalError: string = "";
+    InternalError = await GetResourcePassedLimitError(client, request);
+
+    const distributor = await service.GetDistributor(service.papiClient);
+    let DistributorID = distributor.UUID;
+    
+    if(InternalError!=""){
+        let monitorActivity = {
+            Code: "Resource passed the limit",
+            Type: "SystemStatus",
+            GeneralErrorMessage: "Resource crossed the limit",
+            DistributorID: DistributorID,
+            InternalErrors: [{ ErrorMessage: InternalError }]
+        };
+        return monitorActivity;
+    }
+    return null;
+    
+}
+
+async function GetResourcePassedLimitError(client: Client, request: Request){
+    let InternalError: string = "";
+    //Checking if activities crossed the limit
+    let activitiesKey = 'Data.NucleusActivities';
+    let activityLimitValue = 2*(Math.pow(10,5));
+    InternalError += await checkLimit(client, request, activitiesKey, activityLimitValue, InternalError);
+
+    //Checking if transactions crossed the limit
+    let transactionsKey = 'Data.NucleusTransactionLines';
+    let transactionsLimitValue = 10*(Math.pow(10,5));
+    InternalError += await checkLimit(client, request, transactionsKey, transactionsLimitValue, InternalError);
+
+    //Checking if UDT crossed the limit
+    let UDTsKey = 'Data.UserDefinedTables';
+    let UDTLimitValue = 10*(Math.pow(10,5));
+    InternalError += await checkLimit(client, request, UDTsKey, UDTLimitValue, InternalError);
+
+    return InternalError;
+}
+
+async function checkLimit(client: Client, request: Request, key: string, limitValue: number, InternalError: string){
+    request.query = {key: key};
+    let getResourceData = await get_all_data_for_key(client, request);
+    let resourceValues;
+    if(getResourceData && (Array.isArray(getResourceData) && ((getResourceData as Array<any>).length !== 0)) && getResourceData!= undefined){
+        resourceValues = extractActivityData(getResourceData);
+        //if resource count is greater than the limit, print error
+        if(resourceValues > limitValue){
+            InternalError += "Activities count crossed the limit";
+        }
+    }
+    return InternalError;
+}
+
+
+//extract from the object that returns from get_all_data_for_key the last element
+//get_all_data_for_key- returns a list of a given key values per date
+function extractActivityData(getActivitiesData) {
+    let activitiesCount;
+    //Taking the last element that was inserted to get_all_data_for_key array (the most up-to-date elemnt)
+    activitiesCount = getActivitiesData[getActivitiesData.length - 1];
+    let activitiesValues = (Object.values(activitiesCount))[0];
+    return activitiesValues;
+}
+
+
 export async function get_relations_daily_data(client:Client, request:Request){
     const service = new MyService(client);
     let relations = await service.papiClient.addons.data.relations.iter({where:'RelationName=UsageMonitor'}).toArray();
