@@ -197,7 +197,7 @@ async function GetDataForSUMAggregation(client, usageRelation, index, getRelatio
     const papiClient = service.papiClient;
 
     let sum: number = 0;
-    let id = usageRelation[index]['AddonUUID']+"_"+usageRelation[index]["Name"];
+    let id = usageRelation[index]['AddonUUID'] + "_"+usageRelation[index]["Name"];
 
     //checking for a span of a week
     let startTime: Date = new Date();
@@ -212,13 +212,15 @@ async function GetDataForSUMAggregation(client, usageRelation, index, getRelatio
     let Params: string = `AddonUUID_RelationName='${id}' and ${dateCheck}`;
 
     const Result = await papiClient.addons.data.uuid(usageMonitorUUID).table(dailyUsageTable).iter({where: Params, order_by: "CreationDateTime DESC"}).toArray();
-    let retObj=(Result[0]) ? Result[0] : undefined;
+    let retObj = (Result[0]) ? Result[0] : undefined;
 
     let todayDate: Date = new Date();
-    let todayDateString= (todayDate.getDate()).toString();
+    let todayDateString = (todayDate.getDate()).toString();
 
-    let firstElementDate= (Result[0]) ? Result[0]['CreationDateTime'] : undefined;
-    let firstElementDateString= (firstElementDate) ? (((firstElementDate.split("-"))[2]).slice(0,2)).toString() : undefined;
+    //extract the first element from Result in order to check if its date is from today or yesterday
+    let firstElementDate = (Result[0]) ? Result[0]['CreationDateTime'] : undefined;
+    //extract only the day from the date string
+    let firstElementDateString = (firstElementDate) ? (((firstElementDate.split("-"))[2]).slice(0,2)).toString() : undefined;
 
     //checking if the first item in the array is from today or yesterday- if it is from today we take the second element in the array (from yesterday), else we take the first.
     //if the last item is from today
@@ -255,7 +257,7 @@ function buildRelation(Result, retObj, start, sum, getRelationsResultObject, rel
 async function GetDataForLASTAggregation(client, usageRelation, index, getRelationsResultObject, relationsDataList){
     const service = new MyService(client);
     const papiClient = service.papiClient;
-    let id= usageRelation[index]['AddonUUID']+"_"+usageRelation[index]["Name"];
+    let id = usageRelation[index]['AddonUUID'] + "_" + usageRelation[index]["Name"];
 
     let Params: string = `where=AddonUUID_RelationName='${id}'&order_by=CreationDateTime DESC&page_size=1`;
 
@@ -265,7 +267,7 @@ async function GetDataForLASTAggregation(client, usageRelation, index, getRelati
 
     const Result = await papiClient.get(`/addons/data/${Url}`);
 
-    let lastData =(Result[0]) ? Result[0]['RelationData'] : undefined;
+    let lastData = (Result[0]) ? Result[0]['RelationData'] : undefined;
 
     insert_Relation(lastData, getRelationsResultObject, relationsDataList);
 }
