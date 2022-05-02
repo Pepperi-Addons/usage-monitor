@@ -349,7 +349,9 @@ function aggregateData(Result, i, start){
     let sum = 0;
     //checking for a span of a week
     for(let index= start; index < 8;index++){
-        (Result[index]) ? sum += Result[index]['RelationData']['Resources'][i]['Size'] : undefined;
+        if(Result[index] && Result[index]['RelationData'] && Result[index]['RelationData']['Resources'] && Result[index]['RelationData']['Resources'][i]){
+            sum += Result[index]['RelationData']['Resources'][i]['Size'];
+        }
     }
     return sum;
 }
