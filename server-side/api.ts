@@ -316,7 +316,7 @@ function buildRelation(Result, retObj, start, sum, getRelationsResultObject, rel
     for(let i= 0; i < retObj['RelationData']['Resources'].length; i++){
         sum = aggregateData(Result, i, start);
         retObj['RelationData']['Resources'][i]['Size'] = sum;
-        retObj['RelationData']['Resources'][i]['Description'] = "sum of " + retObj['RelationData']['Resources'][i]['Description'] + " for the last 7 days";
+        retObj['RelationData']['Resources'][i]['Description'] = retObj['RelationData']['Resources'][i]['Description'] + " - in the last 7 days";
     }
     //insert retObj to the exported array
     insert_Relation(retObj['RelationData'], getRelationsResultObject, relationsDataList);
