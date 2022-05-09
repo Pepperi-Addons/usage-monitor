@@ -11,7 +11,8 @@ class MyService {
             baseURL: client.BaseURL,
             token: client.OAuthAccessToken,
             addonUUID: client.AddonUUID,
-            addonSecretKey: client.AddonSecretKey
+            addonSecretKey: client.AddonSecretKey,
+            actionUUID: client.ActionUUID
         });
     }
 

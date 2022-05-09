@@ -16,9 +16,11 @@
 	"author": "",
 	"license": "ISC",
 	"dependencies": {
+		"@pepperi-addons/debug-server": "^0.0.32",
 		"@pepperi-addons/scripts": "^2.0.4",
 		"aws-sdk": "^2.940.0",
 		"file-saver": "^2.0.5",
-		"node-fetch": "^2.6.1"
+		"node-fetch": "^2.6.1",
+		"parallel-each": "^1.1.7"
 	}
 }

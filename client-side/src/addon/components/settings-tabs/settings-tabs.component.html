@@ -5,36 +5,21 @@
             </div>
             <div header-end-content class="pep-spacing-element">
                 <p class="title-md">{{'Lastupdatedonweekdatetime' | translate}} {{weekNumber}}: {{lastUpdatedDate}}</p>
-                <pep-button class="pep-spacing-element"
-                    value="{{'UpdateAllValues' | translate}}"
+                <pep-menu
+                    text=""
+                    iconName="system_menu"
+                    type="action"
                     styleType="weak"
-                    styleStateType="system"
-                    sizeType="sm"
-                    classNames="title-md"
+                    sizeType="md"
+                    classNames=""
+                    [items]="menuItems"
                     [disabled]="false"
-                    iconName="system_processing"
-                    iconPosition="end"
-                    [visible]="true"
-                    (buttonClick)="refreshButtonClicked($event)">
-                </pep-button>
-
-                <pep-button class="pep-spacing-element"
-                    value="{{'ExportToCSV' | translate}}"
-                    styleType="weak"
-                    styleStateType="system"
-                    sizeType="sm"
-                    classNames="title-md"
-                    [disabled]="false"
-                    iconName=""
-                    iconPosition="end"
-                    [visible]="true"
-                    (buttonClick)="export($event)">
-                </pep-button>
-
-                <pep-dimx #dimx [DIMXAddonUUID]="'00000000-0000-0000-0000-000000005a9e'" [DIMXResource]="'UsageMonitor'"></pep-dimx>
-
+                    (menuItemClick)="menuItemClick($event)"
+                ></pep-menu>
             </div>
         </pep-top-bar>
+        <pep-dimx #dimx [DIMXAddonUUID]="'00000000-0000-0000-0000-000000005a9e'" [DIMXResource]="'UsageMonitor'"></pep-dimx>
+
     </ng-container>
     <div pep-main-area class="tabs-container">
         <mat-tab-group  

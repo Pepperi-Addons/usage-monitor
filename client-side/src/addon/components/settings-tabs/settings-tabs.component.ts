@@ -33,6 +33,17 @@ export class SettingsTabsComponent implements OnInit {
       this.initData('get_latest_data');
     }
 
+    menuItems = [
+      {
+        key: 'Update',
+        text: 'Update'
+      },
+      {
+        key: 'Export',
+        text: 'Export'
+      }
+    ];
+
     initData(apiFunc: string) {
       let url = '/addons/api/00000000-0000-0000-0000-000000005A9E/api/' + apiFunc;
       this.http.getPapiApiCall(encodeURI(url)).subscribe(
@@ -63,15 +74,35 @@ export class SettingsTabsComponent implements OnInit {
     tabClick(e){
         this.activeTabIndex = e.index;
     }
-
+/*
     refreshButtonClicked(e: IPepButtonClickEvent) {
         this.initData('collect_data'); // Generates updated data
   }
+  */
 
   getRelationDataTabLabel(tab) {
     return Object.keys(tab)[0];
   }
 
+  menuItemClick($event) {
+    switch ($event.source.key) {
+      case 'Update': {
+        this.initData('collect_data'); // Generates updated data
+        break
+      }
+      case 'Export': {
+        this.dimx?.DIMXExportRun({
+          DIMXExportFormat: "csv",
+          DIMXExportIncludeDeleted: false,
+          DIMXExportFileName: "export",
+          //DIMXExportFields: "",
+          DIMXExportDelimiter: ","
+        });
+        break
+      }
+    }
+  }
+/*
   export(event){
     this.dimx?.DIMXExportRun({
       DIMXExportFormat: "csv",
@@ -81,7 +112,7 @@ export class SettingsTabsComponent implements OnInit {
       DIMXExportDelimiter: ";"
     });
   }
-
+*/
   onDIMXProcessDone($event) {
     //
   }
