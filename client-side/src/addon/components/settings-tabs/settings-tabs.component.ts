@@ -74,11 +74,6 @@ export class SettingsTabsComponent implements OnInit {
     tabClick(e){
         this.activeTabIndex = e.index;
     }
-/*
-    refreshButtonClicked(e: IPepButtonClickEvent) {
-        this.initData('collect_data'); // Generates updated data
-  }
-  */
 
   getRelationDataTabLabel(tab) {
     return Object.keys(tab)[0];
@@ -95,24 +90,13 @@ export class SettingsTabsComponent implements OnInit {
           DIMXExportFormat: "csv",
           DIMXExportIncludeDeleted: false,
           DIMXExportFileName: "export",
-          //DIMXExportFields: "",
           DIMXExportDelimiter: ","
         });
         break
       }
     }
   }
-/*
-  export(event){
-    this.dimx?.DIMXExportRun({
-      DIMXExportFormat: "csv",
-      DIMXExportIncludeDeleted: false,
-      DIMXExportFileName: "export",
-      //DIMXExportFields: "",
-      DIMXExportDelimiter: ";"
-    });
-  }
-*/
+
   onDIMXProcessDone($event) {
     //
   }
