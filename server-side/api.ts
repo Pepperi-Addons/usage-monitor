@@ -4,6 +4,7 @@ import { UsageMonitorTable } from './installation'
 import { createPepperiUsage } from './crm-connector'
 import { get } from 'lodash';
 import peach from 'parallel-each';
+import { PapiClient } from '@pepperi-addons/papi-sdk';
 
 
 //The function is called by health monitor relation
@@ -84,7 +85,7 @@ export async function get_relations_daily_data(client:Client, request:Request){
     try{
         await peach(relations, async(subRelations, i)=>{
             await insertRelationData(service, client, subRelations, ExpirationDateTime)
-        }, await relations.length);
+        }, relations.length);
     }
 
     catch(ex){
@@ -94,10 +95,18 @@ export async function get_relations_daily_data(client:Client, request:Request){
 
 
 async function insertRelationData(service, client, subRelations, ExpirationDateTime){
-        let UUID:string= GenerateGuid();
+        let UUID: string= GenerateGuid();
+        let asyncPapiClient = new PapiClient({
+            baseURL: client.BaseURL,
+            token: client.OAuthAccessToken,
+            addonUUID: client.AddonUUID,
+            addonSecretKey: client.AddonSecretKey,
+            actionUUID: UUID
+        });
+        console.log("Working on ActionUUID:" + UUID);
 
         const url = `/addons/api/async/${subRelations.AddonUUID}${subRelations.AddonRelativeURL?.startsWith('/') ? subRelations.AddonRelativeURL : '/' + subRelations.AddonRelativeURL}`;
-        let getRelationData = await service.papiClient.get(url);
+        let getRelationData = await asyncPapiClient.get(url);
         let auditLogUUID = getRelationData['ExecutionUUID'];
         let auditResult = await getReturnObjectFromAudit(auditLogUUID, service);
 
@@ -114,8 +123,11 @@ async function insertRelationData(service, client, subRelations, ExpirationDateT
             AddonUUID_RelationName: AddonUUID_RelationName,
             ExpirationDateTime: ExpirationDateTime,
             RelationData: RelationData
-        }  
-        await service.papiClient.addons.data.uuid(client.AddonUUID).table('UsageMonitorDaily').upsert(insertRelation);
+        }
+        console.log(`About to insert ${subRelations["Name"]} to UsageMonitorDaily`);
+        await asyncPapiClient.addons.data.uuid(client.AddonUUID).table('UsageMonitorDaily').upsert(insertRelation);
+        console.log(`${subRelations["Name"]} was inserted to UsageMonitorDaily`);
+
 }
 
 // polling audit log until getting the final result success or failure
