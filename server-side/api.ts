@@ -674,6 +674,45 @@ export async function triggered_by_pns(client: Client, request: Request) {
     }
 }
 
+//modify usage data to be without description
+function modifyUsageData(res_collect_data){
+    //copy without references
+    let mod_res_collect_data = JSON.parse(JSON.stringify(res_collect_data));
+    
+    let options = ['Data', 'Setup', 'Usage'];
+    for(let i = 0; i < 3; i++){
+        modifySubData(mod_res_collect_data, options[i]);
+    }
+
+    filterObject(mod_res_collect_data['RelationsData'], 'Description')
+    return mod_res_collect_data;
+}
+
+//remove description from RelationsData tab
+function filterObject(obj, key) {
+    for (let i in obj) {
+        if (!obj.hasOwnProperty(i)) continue;
+        if (typeof obj[i] == 'object') {
+            filterObject(obj[i], key);
+        } else if (i == key) {
+            delete obj[key];
+        }
+    }
+    return obj;
+}
+
+//remove description from Data, Usage and Setup tabs
+function modifySubData(mod_res_collect_data, option){
+    for (let key of Object.keys(mod_res_collect_data[option])){
+        let value = mod_res_collect_data[option][key];
+        if(value && value!= undefined && value['Description'] && value['Description'] != undefined){
+            let size = value['Size'];
+            mod_res_collect_data[option][key] = size ;
+        }
+    }
+}
+
+
 // Extracted this to a function because code job isn't authorized to get from parameter store.
 // So this function is called over http from within run_collect_data (which is called by a code job). 
 export async function push_data_to_crm(client: Client, request: Request) {
@@ -681,6 +720,7 @@ export async function push_data_to_crm(client: Client, request: Request) {
 
     try {
         console.log("About to get CRM credentials from AWS Parameter Store...");
+
         let clientSecret = await service.getParameter("CRMClientSecret", true);
         console.log("Got CRM credentials, about to send data to CRM...");
         let res_collect_data = request.body;
@@ -714,10 +754,13 @@ export async function run_collect_data(client: Client, request: Request) {
         // Run main data collection function
         const res_collect_data = await collect_data(client, request);
 
+        let mod_res_collect_data = modifyUsageData(res_collect_data);
+
         // Insert data to CRM. 
         // Need to do this synchronously by using http call instead of direct function call (code jobs don't have permission to get parameter from parameter store)
         console.log("About to call function push_data_to_crm over http...");
-        let retCRM = await papiClient.addons.api.uuid(client.AddonUUID).file('api').func('push_data_to_crm').post({}, res_collect_data);
+
+        let retCRM = await papiClient.addons.api.uuid(client.AddonUUID).file('api').func('push_data_to_crm').post({}, mod_res_collect_data);
         console.log("Response from push_data_to_crm: " + JSON.stringify(retCRM));
 
         res_collect_data.CRMData = retCRM;
@@ -1001,8 +1044,6 @@ export async function collect_data(client: Client, request: Request) {
         Attachments: null
 
     }
-
-
     result.Errors = errors;
 
     console.log("Finished all calls for data, leaving.");
