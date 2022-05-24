@@ -75,7 +75,7 @@ export async function install(client: Client, request: Request): Promise<any> {
         DIMXRelation(client);
 
         //creating a relation with health monitor
-        healthMonitorRelation(client);
+        //healthMonitorRelation(client);
 
         console.log('Pepperi Usage addon installation succeeded.');
         return {
@@ -158,10 +158,11 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
         const dimxUrl = `/addons/data/relations?where=RelationName='DataExportResource'`;
         let getDIMXRelationData = await service.papiClient.get(dimxUrl);
 
-        if(getDIMXRelationData.length == 0){
+        //if(getDIMXRelationData.length == 0){
             DIMXRelation(client);
-        }
+        //}
 
+        /*
         //If health monitor relation doesn`t exist, create the relation
         const healthMonitorUrl = `/addons/data/relations?where=RelationName='HealthMonitor'`;
         let getHealthMonitorRelationData = await service.papiClient.get(healthMonitorUrl);
@@ -169,6 +170,7 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
         if(getHealthMonitorRelationData.length == 0){
             healthMonitorRelation(client);
         }
+        */
 
         console.log("About to get settings data...")
         const distributor = await service.GetDistributor(service.papiClient);
@@ -290,9 +292,9 @@ async function DIMXRelation(client: Client){
     let relation: Relation = {
         "RelationName": "DataExportResource",
         "AddonUUID": addonUUID,
-        "Name": "UsageDataExportCSV",
+        "Name": "UsageMonitor",
         "Type": "AddonAPI",
-        "AddonRelativeURL": ""
+        "AddonRelativeURL": "/api/changeObject"
     }
 
     try{
@@ -304,6 +306,7 @@ async function DIMXRelation(client: Client){
     }
 }
 
+/*
 //creates a relation to health monitor
 async function healthMonitorRelation(client: Client){
     const service = new MyService(client);
@@ -326,6 +329,7 @@ async function healthMonitorRelation(client: Client){
         throw new Error((ex as {message:string}).message);
     }
 }
+*/
 
 async function UsageMonitorDailyTable(service) {
     //creating daily usage table
@@ -358,7 +362,7 @@ async function UpsertDailyCodeJob(service, usageCodeJob){
                     IsScheduled: true,
                     CronExpression: GetDailyAddonUsageCronExpression(usageCodeJob),
                     AddonPath: "api",
-                    FunctionName: "get_relations_daily_data",
+                    FunctionName: "get_relations_daily_data_and_send_errors",
                     AddonUUID: service.client.AddonUUID,
                     NumberOfTries: 3,
                 });

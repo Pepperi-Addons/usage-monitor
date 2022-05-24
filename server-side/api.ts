@@ -7,51 +7,63 @@ import peach from 'parallel-each';
 import { PapiClient } from '@pepperi-addons/papi-sdk';
 
 
+export function changeObject(client: Client, request: Request){
+    let DIMXObject = request.body;
+    let modObject = filterObject(DIMXObject, "Description");
+    return modObject;
+}
+
+export async function get_relations_daily_data_and_send_errors(client: Client, request: Request){
+    await get_relations_daily_data(client, request);
+    await MonitorErrors(client, request);
+}
+
 //The function is called by health monitor relation
 //If activities/transactions/UTDs count crossed the defined limit, print an error
 export async function MonitorErrors(client: Client, request: Request){
     const service = new MyService(client);
-    let InternalError: string = "";
-    InternalError = await GetResourcePassedLimitError(client, request);
 
-    const distributor = await service.GetDistributor(service.papiClient);
-    let DistributorID = distributor.UUID;
-    
-    if(InternalError!=""){
-        let monitorActivity = {
-            Code: "Resource passed the limit",
-            Type: "SystemStatus",
-            GeneralErrorMessage: "Resource crossed the limit",
-            DistributorID: DistributorID,
-            InternalErrors: [{ ErrorMessage: InternalError }]
-        };
-        return monitorActivity;
+    let InternalError: string = "";
+    let status: string = "Success";
+    await GetResourcePassedLimitError(client, request, InternalError, status);
+
+    let headers = {
+        "X-Pepperi-OwnerID" : client.AddonUUID,
+        "X-Pepperi-SecretKey" : client.AddonSecretKey
     }
-    return null;
-    
+
+    let body = {
+        Name: "Usage Monitor Limit",
+        Description: "Check if usage data passed the limit",
+        Status: status,
+        Message: InternalError
+    }
+
+    const Url: string = `system_Health/notifications`;
+
+    const res = await service.papiClient.post(Url, body, headers);    
 }
 
-async function GetResourcePassedLimitError(client: Client, request: Request){
-    let InternalError: string = "";
+async function GetResourcePassedLimitError(client: Client, request: Request, InternalError: string, status: string){
     //Checking if activities crossed the limit
     let activitiesKey = 'Data.NucleusActivities';
     let activityLimitValue = 2*(Math.pow(10,5));
-    InternalError += await checkLimit(client, request, activitiesKey, activityLimitValue, InternalError);
+    InternalError += await checkLimit(client, request, activitiesKey, activityLimitValue, InternalError, status);
 
     //Checking if transactions crossed the limit
     let transactionsKey = 'Data.NucleusTransactionLines';
     let transactionsLimitValue = 10*(Math.pow(10,5));
-    InternalError += await checkLimit(client, request, transactionsKey, transactionsLimitValue, InternalError);
+    InternalError += await checkLimit(client, request, transactionsKey, transactionsLimitValue, InternalError, status);
 
     //Checking if UDT crossed the limit
     let UDTsKey = 'Data.UserDefinedTables';
     let UDTLimitValue = 10*(Math.pow(10,5));
-    InternalError += await checkLimit(client, request, UDTsKey, UDTLimitValue, InternalError);
+    InternalError += await checkLimit(client, request, UDTsKey, UDTLimitValue, InternalError, status);
 
     return InternalError;
 }
 
-async function checkLimit(client: Client, request: Request, key: string, limitValue: number, InternalError: string){
+async function checkLimit(client: Client, request: Request, key: string, limitValue: number, InternalError: string, status: string){
     request.query = {key: key};
     let getResourceData = await get_all_data_for_key(client, request);
     let resourceValues;
@@ -60,6 +72,7 @@ async function checkLimit(client: Client, request: Request, key: string, limitVa
         //if resource count is greater than the limit, print error
         if(resourceValues > limitValue){
             InternalError += "Activities count crossed the limit";
+            status = "Error";
         }
     }
     return InternalError;
@@ -70,7 +83,7 @@ async function checkLimit(client: Client, request: Request, key: string, limitVa
 //get_all_data_for_key- returns a list of a given key values per date
 function extractActivityData(getActivitiesData) {
     let activitiesCount;
-    //Taking the last element that was inserted to get_all_data_for_key array (the most up-to-date elemnt)
+    //Taking the last element that was inserted to get_all_data_for_key array (the most up-to-date element)
     activitiesCount = getActivitiesData[getActivitiesData.length - 1];
     let activitiesValues = (Object.values(activitiesCount))[0];
     return activitiesValues;
@@ -106,8 +119,12 @@ async function insertRelationData(service, client, subRelations, ExpirationDateT
         console.log("Working on ActionUUID:" + UUID);
 
         const url = `/addons/api/async/${subRelations.AddonUUID}${subRelations.AddonRelativeURL?.startsWith('/') ? subRelations.AddonRelativeURL : '/' + subRelations.AddonRelativeURL}`;
+        console.log("Calling to URL:" + url);
+
         let getRelationData = await asyncPapiClient.get(url);
         let auditLogUUID = getRelationData['ExecutionUUID'];
+        console.log("ExecutionUUID:" + getRelationData['ExecutionUUID']);
+
         let auditResult = await getReturnObjectFromAudit(auditLogUUID, service);
 
         let title = auditResult["Title"];
@@ -675,8 +692,8 @@ export async function triggered_by_pns(client: Client, request: Request) {
 }
 
 //modify usage data to be without description
-function modifyUsageData(res_collect_data){
-    //copy without references
+function removeDescriptionFromCollectData(res_collect_data){
+    //copy by value
     let mod_res_collect_data = JSON.parse(JSON.stringify(res_collect_data));
     
     let options = ['Data', 'Setup', 'Usage'];
@@ -754,13 +771,13 @@ export async function run_collect_data(client: Client, request: Request) {
         // Run main data collection function
         const res_collect_data = await collect_data(client, request);
 
-        let mod_res_collect_data = modifyUsageData(res_collect_data);
+        let res_collect_data_without_description = removeDescriptionFromCollectData(res_collect_data);
 
         // Insert data to CRM. 
         // Need to do this synchronously by using http call instead of direct function call (code jobs don't have permission to get parameter from parameter store)
         console.log("About to call function push_data_to_crm over http...");
 
-        let retCRM = await papiClient.addons.api.uuid(client.AddonUUID).file('api').func('push_data_to_crm').post({}, mod_res_collect_data);
+        let retCRM = await papiClient.addons.api.uuid(client.AddonUUID).file('api').func('push_data_to_crm').post({}, res_collect_data_without_description);
         console.log("Response from push_data_to_crm: " + JSON.stringify(retCRM));
 
         res_collect_data.CRMData = retCRM;
