@@ -23,12 +23,7 @@ export async function get_relations_daily_data_and_send_errors(client: Client, r
 async function MonitorErrors(client: Client, request: Request){
     const service = new MyService(client);
 
-    let returnedObject = {
-        InternalError: "",
-        status: "Success"
-    }
-
-    await GetResourcePassedLimitError(client, request, returnedObject);
+    let returnedObject = await getResourcePassedLimitError(client, request);
 
     let headers = {
         "X-Pepperi-OwnerID" : client.AddonUUID,
@@ -47,7 +42,12 @@ async function MonitorErrors(client: Client, request: Request){
     const res = await service.papiClient.post(Url, body, headers);    
 }
 
-async function GetResourcePassedLimitError(client: Client, request: Request, returnedObject){
+async function getResourcePassedLimitError(client: Client, request: Request){
+    let returnedObject = {
+        InternalError: "",
+        status: "Success"
+    }
+
     //Checking if activities crossed the limit
     let activitiesKey = 'Data.NucleusActivities';
     let activityLimitValue = 2*(Math.pow(10,5));
@@ -62,6 +62,8 @@ async function GetResourcePassedLimitError(client: Client, request: Request, ret
     let UDTsKey = 'Data.UserDefinedTables';
     let UDTLimitValue = 10*(Math.pow(10,5));
     await pushToInternalError(client, request, UDTsKey, UDTLimitValue, returnedObject);
+
+    return returnedObject;
 }
 
 async function pushToInternalError(client, request, key, limitValue, returnedObject){

@@ -74,8 +74,6 @@ export async function install(client: Client, request: Request): Promise<any> {
         //creating a relation with DIMX
         DIMXRelation(client);
 
-        //there is no need for health monitor relation- usage monitor calls directly to system health api function
-
         console.log('Pepperi Usage addon installation succeeded.');
         return {
             success: true,
@@ -154,11 +152,14 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
     try {
         const service = new MyService(client);
 
-        //creates a relation to DIMX
-        DIMXRelation(client);
-        
-        //there is no need for health monitor relation- usage monitor calls directly to system health api function
+        //If DIMX relation doesn`t exist, create the relation
+        const dimxUrl = `/addons/data/relations?where=RelationName='DataExportResource'`;
+        let getDIMXRelationData = await service.papiClient.get(dimxUrl);
 
+        if(getDIMXRelationData.length == 0){
+            DIMXRelation(client);
+        }
+        
         console.log("About to get settings data...")
         const distributor = await service.GetDistributor(service.papiClient);
         const settingsData = await service.papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorSettings.Name).key(distributor.InternalID.toString()).get();
