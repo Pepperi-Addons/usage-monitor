@@ -7,25 +7,28 @@ import peach from 'parallel-each';
 import { PapiClient } from '@pepperi-addons/papi-sdk';
 
 
-export function changeObject(client: Client, request: Request){
+export function buildObjectsForDIMX(client: Client, request: Request){
     let DIMXObject = request.body;
     let modObject = filterObject(DIMXObject, "Description");
     return modObject;
 }
 
 export async function get_relations_daily_data_and_send_errors(client: Client, request: Request){
-    await get_relations_daily_data(client, request);
+    await getRelationsDailyData(client, request);
     await MonitorErrors(client, request);
 }
 
 //The function is called by health monitor relation
 //If activities/transactions/UTDs count crossed the defined limit, print an error
-export async function MonitorErrors(client: Client, request: Request){
+async function MonitorErrors(client: Client, request: Request){
     const service = new MyService(client);
 
-    let InternalError: string = "";
-    let status: string = "Success";
-    await GetResourcePassedLimitError(client, request, InternalError, status);
+    let returnedObject = {
+        InternalError: "",
+        status: "Success"
+    }
+
+    await GetResourcePassedLimitError(client, request, returnedObject);
 
     let headers = {
         "X-Pepperi-OwnerID" : client.AddonUUID,
@@ -35,8 +38,8 @@ export async function MonitorErrors(client: Client, request: Request){
     let body = {
         Name: "Usage Monitor Limit",
         Description: "Check if usage data passed the limit",
-        Status: status,
-        Message: InternalError
+        Status: returnedObject.status,
+        Message: returnedObject.InternalError
     }
 
     const Url: string = `system_Health/notifications`;
@@ -44,26 +47,29 @@ export async function MonitorErrors(client: Client, request: Request){
     const res = await service.papiClient.post(Url, body, headers);    
 }
 
-async function GetResourcePassedLimitError(client: Client, request: Request, InternalError: string, status: string){
+async function GetResourcePassedLimitError(client: Client, request: Request, returnedObject){
     //Checking if activities crossed the limit
     let activitiesKey = 'Data.NucleusActivities';
     let activityLimitValue = 2*(Math.pow(10,5));
-    InternalError += await checkLimit(client, request, activitiesKey, activityLimitValue, InternalError, status);
+    await pushToInternalError(client, request, activitiesKey, activityLimitValue, returnedObject);
 
     //Checking if transactions crossed the limit
     let transactionsKey = 'Data.NucleusTransactionLines';
     let transactionsLimitValue = 10*(Math.pow(10,5));
-    InternalError += await checkLimit(client, request, transactionsKey, transactionsLimitValue, InternalError, status);
+    await pushToInternalError(client, request, transactionsKey, transactionsLimitValue, returnedObject);
 
     //Checking if UDT crossed the limit
     let UDTsKey = 'Data.UserDefinedTables';
     let UDTLimitValue = 10*(Math.pow(10,5));
-    InternalError += await checkLimit(client, request, UDTsKey, UDTLimitValue, InternalError, status);
-
-    return InternalError;
+    await pushToInternalError(client, request, UDTsKey, UDTLimitValue, returnedObject);
 }
 
-async function checkLimit(client: Client, request: Request, key: string, limitValue: number, InternalError: string, status: string){
+async function pushToInternalError(client, request, key, limitValue, returnedObject){
+    let returnedValue = await checkLimit(client, request, key, limitValue, returnedObject);
+    (returnedValue != undefined) ? (returnedObject.InternalError += returnedValue) : (returnedObject.InternalError += "")
+}
+
+async function checkLimit(client: Client, request: Request, key: string, limitValue: number, returnedObject){
     request.query = {key: key};
     let getResourceData = await get_all_data_for_key(client, request);
     let resourceValues;
@@ -71,11 +77,10 @@ async function checkLimit(client: Client, request: Request, key: string, limitVa
         resourceValues = extractActivityData(getResourceData);
         //if resource count is greater than the limit, print error
         if(resourceValues > limitValue){
-            InternalError += "Activities count crossed the limit";
-            status = "Error";
+            returnedObject.InternalError += "Activities count crossed the limit";
+            returnedObject.status = "Error";
         }
     }
-    return InternalError;
 }
 
 
@@ -90,7 +95,7 @@ function extractActivityData(getActivitiesData) {
 }
 
 
-export async function get_relations_daily_data(client:Client, request:Request){
+async function getRelationsDailyData(client:Client, request:Request){
     const service = new MyService(client);
     let relations = await service.papiClient.addons.data.relations.iter({where:'RelationName=UsageMonitor'}).toArray();
     let ExpirationDateTime: Date = new Date(new Date().setFullYear(new Date().getFullYear() + 1));
