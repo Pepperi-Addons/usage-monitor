@@ -74,9 +74,6 @@ export async function install(client: Client, request: Request): Promise<any> {
         //creating a relation with DIMX
         DIMXRelation(client);
 
-        //creating a relation with health monitor
-        healthMonitorRelation(client);
-
         console.log('Pepperi Usage addon installation succeeded.');
         return {
             success: true,
@@ -154,6 +151,7 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
 export async function upgrade(client: Client, request: Request): Promise<any> {
     try {
         const service = new MyService(client);
+
         //If DIMX relation doesn`t exist, create the relation
         const dimxUrl = `/addons/data/relations?where=RelationName='DataExportResource'`;
         let getDIMXRelationData = await service.papiClient.get(dimxUrl);
@@ -161,15 +159,7 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
         if(getDIMXRelationData.length == 0){
             DIMXRelation(client);
         }
-
-        //If health monitor relation doesn`t exist, create the relation
-        const healthMonitorUrl = `/addons/data/relations?where=RelationName='HealthMonitor'`;
-        let getHealthMonitorRelationData = await service.papiClient.get(healthMonitorUrl);
-
-        if(getHealthMonitorRelationData.length == 0){
-            healthMonitorRelation(client);
-        }
-
+        
         console.log("About to get settings data...")
         const distributor = await service.GetDistributor(service.papiClient);
         const settingsData = await service.papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorSettings.Name).key(distributor.InternalID.toString()).get();
@@ -290,9 +280,9 @@ async function DIMXRelation(client: Client){
     let relation: Relation = {
         "RelationName": "DataExportResource",
         "AddonUUID": addonUUID,
-        "Name": "UsageDataExportCSV",
+        "Name": "UsageMonitor",
         "Type": "AddonAPI",
-        "AddonRelativeURL": ""
+        "AddonRelativeURL": "/api/buildObjectsForDIMX"
     }
 
     try{
@@ -304,28 +294,6 @@ async function DIMXRelation(client: Client){
     }
 }
 
-//creates a relation to health monitor
-async function healthMonitorRelation(client: Client){
-    const service = new MyService(client);
-    const papiClient = service.papiClient;
-
-    let addonUUID = client.AddonUUID;
-    let relation: Relation = {
-        "RelationName": "HealthMonitor",
-        "AddonUUID": addonUUID,
-        "Name": "MonitorErrors",
-        "Type": "AddonAPI",
-        "AddonRelativeURL": "/api/MonitorErrors"
-    }
-
-    try{
-        await papiClient.addons.data.relations.upsert(relation);
-    }
-    catch(ex){
-        console.log(`upsertRelation: ${ex}`);
-        throw new Error((ex as {message:string}).message);
-    }
-}
 
 async function UsageMonitorDailyTable(service) {
     //creating daily usage table
@@ -358,7 +326,7 @@ async function UpsertDailyCodeJob(service, usageCodeJob){
                     IsScheduled: true,
                     CronExpression: GetDailyAddonUsageCronExpression(usageCodeJob),
                     AddonPath: "api",
-                    FunctionName: "get_relations_daily_data",
+                    FunctionName: "get_relations_daily_data_and_send_errors",
                     AddonUUID: service.client.AddonUUID,
                     NumberOfTries: 3,
                 });
