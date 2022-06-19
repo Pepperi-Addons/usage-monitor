@@ -15,7 +15,7 @@ export function buildObjectsForDIMX(client: Client, request: Request){
 
 export async function get_relations_daily_data_and_send_errors(client: Client, request: Request){
     await getRelationsDailyData(client, request);
-    await MonitorErrors(client, request);
+    //await MonitorErrors(client, request);
 }
 
 //The function is called by health monitor relation
@@ -37,7 +37,7 @@ async function MonitorErrors(client: Client, request: Request){
         Message: returnedObject.InternalError
     }
 
-    const Url: string = `system_Health/notifications`;
+    const Url: string = `/system_Health/notifications`;
 
     const res = await service.papiClient.post(Url, body, headers);    
 }

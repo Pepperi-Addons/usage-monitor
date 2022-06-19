@@ -72,7 +72,7 @@ export async function install(client: Client, request: Request): Promise<any> {
         const settingsResponse = await service.papiClient.addons.data.uuid(client.AddonUUID).table('UsageMonitorSettings').upsert(settingsBodyADAL);
 
         //creating a relation with DIMX
-        DIMXRelation(client);
+        await DIMXRelation(client);
 
         console.log('Pepperi Usage addon installation succeeded.');
         return {
@@ -157,7 +157,7 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
         let getDIMXRelationData = await service.papiClient.get(dimxUrl);
 
         if(getDIMXRelationData.length == 0){
-            DIMXRelation(client);
+            await DIMXRelation(client);
         }
         
         console.log("About to get settings data...")
@@ -172,7 +172,6 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
             console.log("About to create new daily table");
             UsageMonitorDailyTable(service);
         }
-
         //creating code job for daily usage
         const usageCodeJob = await service.papiClient.codeJobs.uuid(codeJobUUID).get();
 
@@ -218,6 +217,20 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
                 UUID: codeJobUUID,
                 CodeJobName: "Pepperi Usage Monitor",
                 CronExpression: getWeeklyCronExpression(client.OAuthAccessToken)
+            });
+
+            console.log("Successfully updated code job.");
+            console.log("Successfully upgraded addon to new version.");
+        }
+
+        // change codeJob functionName
+        if(Semver.lte(request.body.FromVersion, '1.2.12')){
+            console.log(`About to post code job again with a different FunctionName`);
+
+            const codeJob = await service.papiClient.codeJobs.upsert({
+                UUID: DailyUsageMonitorCodeJobUUID,
+                CodeJobName: "Pepperi Daily Usage Monitor",
+                FunctionName: "get_relations_daily_data_and_send_errors"
             });
 
             console.log("Successfully updated code job.");
