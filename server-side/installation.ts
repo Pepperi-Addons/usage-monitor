@@ -151,7 +151,7 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
 export async function upgrade(client: Client, request: Request): Promise<any> {
     try {
         const service = new MyService(client);
-
+        let addonUUID = client.AddonUUID;
         //If DIMX relation doesn`t exist, create the relation
         const dimxUrl = `/addons/data/relations?where=RelationName='DataExportResource'`;
         let getDIMXRelationData = await service.papiClient.get(dimxUrl);
@@ -232,7 +232,13 @@ export async function upgrade(client: Client, request: Request): Promise<any> {
                 CodeJobName: "Pepperi Daily Usage Monitor",
                 FunctionName: "get_relations_daily_data_and_send_errors"
             });
-
+            const relation = await service.papiClient.addons.data.relations.upsert({
+                "RelationName": "DataExportResource",
+                "AddonUUID": addonUUID,
+                "Name": "UsageMonitor",
+                "Type": "AddonAPI",
+                "AddonRelativeURL": "/api/buildObjectsForDIMX"
+            });
             console.log("Successfully updated code job.");
             console.log("Successfully upgraded addon to new version.");
         }
