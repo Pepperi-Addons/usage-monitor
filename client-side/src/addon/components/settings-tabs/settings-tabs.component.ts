@@ -19,6 +19,10 @@ export class SettingsTabsComponent implements OnInit {
     weekNumber = 0;
     lastUpdatedDate: string;
     relationsData: {}[];
+    UserDefinedTables: Number;
+    NucleusTransactionLines: Number;
+    NucleusActivities: Number;
+
     
     constructor(
       private dialogService: PepDialogService,
@@ -55,6 +59,11 @@ export class SettingsTabsComponent implements OnInit {
                 this.lastUpdatedDate = new Date(latest_data_received.Key).toLocaleString();
 
                 this.relationsData = latest_data_received.RelationsData;
+
+                //for "update now" activate system health
+                this.UserDefinedTables = latest_data_received.Data.UserDefinedTables;
+                this.NucleusTransactionLines = latest_data_received.Data.NucleusTransactionLines;
+                this.NucleusActivities = latest_data_received.Data.NucleusActivities;
               }
           },
           (error) => this.openErrorDialog(error),
@@ -79,10 +88,11 @@ export class SettingsTabsComponent implements OnInit {
     return Object.keys(tab)[0];
   }
 
-  menuItemClick($event) {
+  async menuItemClick($event) {
     switch ($event.source.key) {
       case 'Update': {
         this.initData('collect_data'); // Generates updated data
+        await this.updateSystemHealth('MonitorErrors')  //on "update now", call to system health
         break
       }
       case 'Export': {
@@ -96,6 +106,26 @@ export class SettingsTabsComponent implements OnInit {
       }
     }
   }
+
+  async updateSystemHealth(apiFunc: string) {
+    let url = '/addons/api/00000000-0000-0000-0000-000000005A9E/api/' + apiFunc;
+    let body = {
+      NucleusTransactionLines: this.NucleusTransactionLines,
+      NucleusActivities: this.NucleusActivities,
+      UserDefinedTables:  this.UserDefinedTables
+    }
+    try{
+      await this.http.postPapiApiCall(encodeURI(url), body).subscribe(
+        (element) => {},
+        (error) => this.openErrorDialog(error),
+        () => {}
+      );
+
+    }
+    catch(error){
+      console.log(error)
+    }
+}
 
   onDIMXProcessDone($event) {
     //

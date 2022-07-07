@@ -20,9 +20,22 @@ export async function get_relations_daily_data_and_send_errors(client: Client, r
 
 //The function is called by health monitor relation
 //If activities/transactions/UTDs count crossed the defined limit, print an error
-async function MonitorErrors(client: Client, request: Request){
+export async function MonitorErrors(client: Client, request: Request){
     const service = new MyService(client);
-    let returnedObject = await getResourcePassedLimitError(client, request);
+    let returnedObject = {
+        InternalError: "",
+        status: "SUCCESS"
+    }
+
+    if(request.body != undefined){
+        for(const element in request.body){
+            updateNowData(returnedObject, element, request.body[element]);
+        }
+    }
+    else{
+        await getResourcePassedLimitError(client, request, returnedObject);
+    }
+    console.log(`About to call system health with returnedObject ${JSON.stringify(returnedObject)}`);
 
     if(returnedObject.InternalError != ""){
         let headers = {
@@ -48,12 +61,15 @@ async function MonitorErrors(client: Client, request: Request){
     }
 }
 
-async function getResourcePassedLimitError(client: Client, request: Request){
-    let returnedObject = {
-        InternalError: "",
-        status: "SUCCESS"
+function updateNowData(returnedObject, element, resourceValue){
+    if((element == 'NucleusActivities' && resourceValue >= 2*(Math.pow(10,5))) || resourceValue >= 10*(Math.pow(10,5))){
+        returnedObject.status = "ERROR"
+        returnedObject.InternalError += `${element} count crossed the limit. `;
     }
+    return returnedObject;    
+}
 
+async function getResourcePassedLimitError(client: Client, request: Request, returnedObject){
     //Checking if activities crossed the limit
     let activitiesKey = 'Data.NucleusActivities';
     let activityLimitValue = 2*(Math.pow(10,5));

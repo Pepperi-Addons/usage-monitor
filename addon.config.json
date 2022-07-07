@@ -1,6 +1,6 @@
 {
   "AddonUUID": "00000000-0000-0000-0000-000000005a9e",
-  "AddonVersion": "1.2.10",
+  "AddonVersion": "1.2.19",
   "DebugPort": 4400,
   "WebappBaseUrl": "https://app.sandbox.pepperi.com",
   "DefaultEditor": "main",
@@ -25,6 +25,8 @@
         "Description": "Data & Usage Report"
       }
     ],
-    "Dependencies": {}
+    "Dependencies": {
+      "systemHealth": "0.0.76"
+    }
   }
 }
