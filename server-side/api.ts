@@ -22,24 +22,11 @@ export async function get_relations_daily_data_and_send_errors(client: Client, r
 //If activities/transactions/UTDs count crossed the defined limit, print an error
 export async function MonitorErrors(client: Client, request: Request){
     const service = new MyService(client);
-    let activityList = ['UserDefinedTables', 'NucleusTransactionLines', 'NucleusActivities']
     let returnedObject = {
         InternalError: "",
         status: "SUCCESS"
     }
-
-    if(Object.keys(request.body).length != 0){
-        for(const element in request.body){
-            updateReturnedObject(returnedObject, element, request.body[element]);
-        }
-    }
-    else{
-        for(const element of activityList){
-            let resourceData = await getResourceData(client, request, element);
-            updateReturnedObject(returnedObject, element, resourceData)
-        }
-    }
-    console.log(`About to call system health with returnedObject ${JSON.stringify(returnedObject)}`);
+    await checkResourceLimit(client, request, returnedObject)
 
     if(returnedObject.InternalError != ""){
         let headers = {
@@ -65,14 +52,24 @@ export async function MonitorErrors(client: Client, request: Request){
     }
 }
 
-async function getResourceData(client: Client, request: Request, key){
-    request.query = {key: `Data.${key}`};
-    let getResourceData = await get_all_data_for_key(client, request);
-    let resourceValues;
-    if(getResourceData && (Array.isArray(getResourceData) && ((getResourceData as Array<any>).length !== 0)) && getResourceData!= undefined){
-        resourceValues = extractActivityData(getResourceData);
+async function checkResourceLimit(client: Client, request: Request, returnedObject){
+    let activityList = ['UserDefinedTables', 'NucleusTransactionLines', 'NucleusActivities']
+    //called by UI "update now" - data is extracted by "collect_data" in the client-side
+    if(Object.keys(request.body).length != 0){
+        for(const element in request.body){
+            updateReturnedObject(returnedObject, element, request.body[element]);
+        }
     }
-    return resourceValues;
+    //function executed by codeJob - data is extracted from adal
+    else{
+        let allData = await get_latest_data(client, request);
+        for(const element of activityList){
+            if(allData){
+                let resourceData = allData['Data'][element];
+                updateReturnedObject(returnedObject, element, resourceData)
+            }
+        }
+    }
 }
 
 function updateReturnedObject(returnedObject, element, resourceValue){
