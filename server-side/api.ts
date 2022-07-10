@@ -795,7 +795,7 @@ export async function run_collect_data(client: Client, request: Request) {
         console.log("About to call function push_data_to_crm over http...");
         environment = jwtDecode(client.OAuthAccessToken)["pepperi.datacenter"];
 
-        if(environment == "prod"){
+        if(environment == "prod" || environment == "eu"){
             let retCRM = await papiClient.addons.api.uuid(client.AddonUUID).file('api').func('push_data_to_crm').post({}, res_collect_data_without_description);
             console.log("Response from push_data_to_crm: " + JSON.stringify(retCRM));
             res_collect_data.CRMData = retCRM;
