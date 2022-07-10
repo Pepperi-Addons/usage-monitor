@@ -22,18 +22,22 @@ export async function get_relations_daily_data_and_send_errors(client: Client, r
 //If activities/transactions/UTDs count crossed the defined limit, print an error
 export async function MonitorErrors(client: Client, request: Request){
     const service = new MyService(client);
+    let activityList = ['UserDefinedTables', 'NucleusTransactionLines', 'NucleusActivities']
     let returnedObject = {
         InternalError: "",
         status: "SUCCESS"
     }
 
-    if(request.body != undefined){
+    if(Object.keys(request.body).length != 0){
         for(const element in request.body){
-            updateNowData(returnedObject, element, request.body[element]);
+            updateReturnedObject(returnedObject, element, request.body[element]);
         }
     }
     else{
-        await getResourcePassedLimitError(client, request, returnedObject);
+        for(const element of activityList){
+            let resourceData = await getResourceData(client, request, element);
+            updateReturnedObject(returnedObject, element, resourceData)
+        }
     }
     console.log(`About to call system health with returnedObject ${JSON.stringify(returnedObject)}`);
 
@@ -61,55 +65,23 @@ export async function MonitorErrors(client: Client, request: Request){
     }
 }
 
-function updateNowData(returnedObject, element, resourceValue){
+async function getResourceData(client: Client, request: Request, key){
+    request.query = {key: `Data.${key}`};
+    let getResourceData = await get_all_data_for_key(client, request);
+    let resourceValues;
+    if(getResourceData && (Array.isArray(getResourceData) && ((getResourceData as Array<any>).length !== 0)) && getResourceData!= undefined){
+        resourceValues = extractActivityData(getResourceData);
+    }
+    return resourceValues;
+}
+
+function updateReturnedObject(returnedObject, element, resourceValue){
     if((element == 'NucleusActivities' && resourceValue >= 2*(Math.pow(10,5))) || resourceValue >= 10*(Math.pow(10,5))){
         returnedObject.status = "ERROR"
         returnedObject.InternalError += `${element} count crossed the limit. `;
     }
     return returnedObject;    
 }
-
-async function getResourcePassedLimitError(client: Client, request: Request, returnedObject){
-    //Checking if activities crossed the limit
-    let activitiesKey = 'Data.NucleusActivities';
-    let activityLimitValue = 2*(Math.pow(10,5));
-
-    await pushToInternalError(client, request, activitiesKey, activityLimitValue, returnedObject, "Activities");
-
-    //Checking if transactions crossed the limit
-    let transactionsKey = 'Data.NucleusTransactionLines';
-    let transactionsLimitValue = 10*(Math.pow(10,5));
-
-    await pushToInternalError(client, request, transactionsKey, transactionsLimitValue, returnedObject, "Transactions");
-
-    //Checking if UDT crossed the limit
-    let UDTsKey = 'Data.UserDefinedTables';
-    let UDTLimitValue = 10*(Math.pow(10,5));
-
-    await pushToInternalError(client, request, UDTsKey, UDTLimitValue, returnedObject, "User Defined Tables");
-
-    return returnedObject;
-}
-
-async function pushToInternalError(client, request, key, limitValue, returnedObject, activity){
-    let returnedValue = await checkLimit(client, request, key, limitValue, returnedObject, activity);
-    (returnedValue != undefined) ? (returnedObject.InternalError += returnedValue) : (returnedObject.InternalError += "")
-}
-
-async function checkLimit(client: Client, request: Request, key: string, limitValue: number, returnedObject, activity){
-    request.query = {key: key};
-    let getResourceData = await get_all_data_for_key(client, request);
-    let resourceValues;
-    if(getResourceData && (Array.isArray(getResourceData) && ((getResourceData as Array<any>).length !== 0)) && getResourceData!= undefined){
-        resourceValues = extractActivityData(getResourceData);
-        //if resource count is greater than the limit, print error
-        if(resourceValues > limitValue){
-            returnedObject.InternalError += `${activity} count crossed the limit. `;
-            returnedObject.status = "ERROR";
-        }
-    }
-}
-
 
 //extract from the object that returns from get_all_data_for_key the last element
 //get_all_data_for_key- returns a list of a given key values per date
