@@ -6,6 +6,10 @@ import { get } from 'lodash';
 import peach from 'parallel-each';
 import { PapiClient } from '@pepperi-addons/papi-sdk';
 
+//for nucleus Activities the limit is 2 million
+const nucleusActivitiesLimit = 2*(Math.pow(10,5));
+//for user Defined Tables and nucleus Transaction Lines the limit is 10 million
+const usageDatalimit = 10*(Math.pow(10,5));
 
 export function buildObjectsForDIMX(client: Client, request: Request){
     let DIMXObject = request.body;
@@ -73,7 +77,7 @@ async function checkResourceLimit(client: Client, request: Request, returnedObje
 }
 
 function updateReturnedObject(returnedObject, element, resourceValue){
-    if((element == 'NucleusActivities' && resourceValue >= 2*(Math.pow(10,5))) || resourceValue >= 10*(Math.pow(10,5))){
+    if((element == 'NucleusActivities' && resourceValue >= nucleusActivitiesLimit) || resourceValue >= usageDatalimit){
         returnedObject.status = "ERROR"
         returnedObject.InternalError += `${element} count crossed the limit. `;
     }
