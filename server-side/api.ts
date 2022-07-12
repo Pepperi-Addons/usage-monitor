@@ -67,12 +67,12 @@ async function checkResourceLimit(client: Client, request: Request, returnedObje
     //function executed by codeJob - data is extracted from adal
     else{
         let allData = await get_latest_data(client, request);
-        for(const element of activityList){
-            if(allData){
+        if(allData){
+            for(const element of activityList){
                 let resourceData = allData['Data'][element];
                 updateReturnedObject(returnedObject, element, resourceData)
             }
-        }
+        }   
     }
 }
 
