@@ -5,7 +5,6 @@ import { createPepperiUsage } from './crm-connector'
 import { get } from 'lodash';
 import peach from 'parallel-each';
 import { PapiClient } from '@pepperi-addons/papi-sdk';
-import jwtDecode from "jwt-decode";
 
 //for nucleus Activities the limit is 2 million
 const nucleusActivitiesLimit = 2*(Math.pow(10,5));
