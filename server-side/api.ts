@@ -5,6 +5,7 @@ import { createPepperiUsage } from './crm-connector'
 import { get } from 'lodash';
 import peach from 'parallel-each';
 import { PapiClient } from '@pepperi-addons/papi-sdk';
+import jwtDecode from "jwt-decode";
 
 //for nucleus Activities the limit is 2 million
 const nucleusActivitiesLimit = 2*(Math.pow(10,5));
@@ -19,7 +20,7 @@ export function buildObjectsForDIMX(client: Client, request: Request){
 
 export async function get_relations_daily_data_and_send_errors(client: Client, request: Request){
     await getRelationsDailyData(client, request);
-    await MonitorErrors(client, request);
+    //await MonitorErrors(client, request);
 }
 
 //The function is called by health monitor relation
@@ -761,6 +762,7 @@ export async function push_data_to_crm(client: Client, request: Request) {
 export async function run_collect_data(client: Client, request: Request) {
     const service = new MyService(client);
     let papiClient = service.papiClient;
+    let environment: string;
 
     try {
         console.log("About to call collect_data...");
@@ -773,18 +775,20 @@ export async function run_collect_data(client: Client, request: Request) {
         // Insert data to CRM. 
         // Need to do this synchronously by using http call instead of direct function call (code jobs don't have permission to get parameter from parameter store)
         console.log("About to call function push_data_to_crm over http...");
+        environment = jwtDecode(client.OAuthAccessToken)["pepperi.datacenter"];
 
-        let retCRM = await papiClient.addons.api.uuid(client.AddonUUID).file('api').func('push_data_to_crm').post({}, res_collect_data_without_description);
-        console.log("Response from push_data_to_crm: " + JSON.stringify(retCRM));
-
-        res_collect_data.CRMData = retCRM;
-
+        if(environment == "prod" || environment == "eu"){
+            let retCRM = await papiClient.addons.api.uuid(client.AddonUUID).file('api').func('push_data_to_crm').post({}, res_collect_data_without_description);
+            console.log("Response from push_data_to_crm: " + JSON.stringify(retCRM));
+            res_collect_data.CRMData = retCRM;
+        }
+    
         console.log(`About to add data to table ${UsageMonitorTable.Name}.`);
 
         // Insert results to ADAL
         await papiClient.addons.data.uuid(client.AddonUUID).table(UsageMonitorTable.Name).upsert(res_collect_data);
 
-        console.log("Data added to table successfully, leaving.");        
+        console.log("Data added to table successfully, leaving.");
 
         return res_collect_data;
     }
