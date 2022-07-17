@@ -61,7 +61,9 @@ async function checkResourceLimit(client: Client, request: Request, returnedObje
     //called by UI "update now" - data is extracted by "collect_data" in the client-side
     if(Object.keys(request.body).length != 0){
         for(const element in request.body){
-            updateReturnedObject(returnedObject, element, request.body[element]);
+            if(activityList.includes(element)){
+                updateReturnedObject(returnedObject, element, request.body[element]);
+            }
         }
     }
     //function executed by codeJob - data is extracted from adal
@@ -84,17 +86,7 @@ function updateReturnedObject(returnedObject, element, resourceValue){
     return returnedObject;    
 }
 
-//extract from the object that returns from get_all_data_for_key the last element
-//get_all_data_for_key- returns a list of a given key values per date
-function extractActivityData(getActivitiesData) {
-    let activitiesCount;
-    //Taking the last element that was inserted to get_all_data_for_key array (the most up-to-date element)
-    activitiesCount = getActivitiesData[getActivitiesData.length - 1];
-    let activitiesValues = (Object.values(activitiesCount))[0];
-    return activitiesValues;
-}
-
-
+//daily data insertion to UsageMonitorDaily table
 async function getRelationsDailyData(client:Client, request:Request){
     const service = new MyService(client);
     let relations = await service.papiClient.addons.data.relations.iter({where:'RelationName=UsageMonitor'}).toArray();
