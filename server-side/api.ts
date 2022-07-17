@@ -7,6 +7,11 @@ import peach from 'parallel-each';
 import { PapiClient } from '@pepperi-addons/papi-sdk';
 import jwtDecode from "jwt-decode";
 
+//for nucleus Activities the limit is 2 million
+const nucleusActivitiesLimit = 2*(Math.pow(10,5));
+//for user Defined Tables and nucleus Transaction Lines the limit is 10 million
+const usageDatalimit = 10*(Math.pow(10,5));
+
 export function buildObjectsForDIMX(client: Client, request: Request){
     let DIMXObject = request.body;
     let modObject = filterObject(DIMXObject, "Description");
@@ -20,9 +25,13 @@ export async function get_relations_daily_data_and_send_errors(client: Client, r
 
 //The function is called by health monitor relation
 //If activities/transactions/UTDs count crossed the defined limit, print an error
-async function MonitorErrors(client: Client, request: Request){
+export async function MonitorErrors(client: Client, request: Request){
     const service = new MyService(client);
-    let returnedObject = await getResourcePassedLimitError(client, request);
+    let returnedObject = {
+        InternalError: "",
+        status: "SUCCESS"
+    }
+    await checkResourceLimit(client, request, returnedObject)
 
     if(returnedObject.InternalError != ""){
         let headers = {
@@ -48,64 +57,37 @@ async function MonitorErrors(client: Client, request: Request){
     }
 }
 
-async function getResourcePassedLimitError(client: Client, request: Request){
-    let returnedObject = {
-        InternalError: "",
-        status: "SUCCESS"
-    }
-
-    //Checking if activities crossed the limit
-    let activitiesKey = 'Data.NucleusActivities';
-    let activityLimitValue = 2*(Math.pow(10,5));
-
-    await pushToInternalError(client, request, activitiesKey, activityLimitValue, returnedObject, "Activities");
-
-    //Checking if transactions crossed the limit
-    let transactionsKey = 'Data.NucleusTransactionLines';
-    let transactionsLimitValue = 10*(Math.pow(10,5));
-
-    await pushToInternalError(client, request, transactionsKey, transactionsLimitValue, returnedObject, "Transactions");
-
-    //Checking if UDT crossed the limit
-    let UDTsKey = 'Data.UserDefinedTables';
-    let UDTLimitValue = 10*(Math.pow(10,5));
-
-    await pushToInternalError(client, request, UDTsKey, UDTLimitValue, returnedObject, "User Defined Tables");
-
-    return returnedObject;
-}
-
-async function pushToInternalError(client, request, key, limitValue, returnedObject, activity){
-    let returnedValue = await checkLimit(client, request, key, limitValue, returnedObject, activity);
-    (returnedValue != undefined) ? (returnedObject.InternalError += returnedValue) : (returnedObject.InternalError += "")
-}
-
-async function checkLimit(client: Client, request: Request, key: string, limitValue: number, returnedObject, activity){
-    request.query = {key: key};
-    let getResourceData = await get_all_data_for_key(client, request);
-    let resourceValues;
-    if(getResourceData && (Array.isArray(getResourceData) && ((getResourceData as Array<any>).length !== 0)) && getResourceData!= undefined){
-        resourceValues = extractActivityData(getResourceData);
-        //if resource count is greater than the limit, print error
-        if(resourceValues > limitValue){
-            returnedObject.InternalError += `${activity} count crossed the limit. `;
-            returnedObject.status = "ERROR";
+async function checkResourceLimit(client: Client, request: Request, returnedObject){
+    let activityList = ['UserDefinedTables', 'NucleusTransactionLines', 'NucleusActivities']
+    //called by UI "update now" - data is extracted by "collect_data" in the client-side
+    if(Object.keys(request.body).length != 0){
+        for(const element in request.body){
+            if(activityList.includes(element)){
+                updateReturnedObject(returnedObject, element, request.body[element]);
+            }
         }
     }
+    //function executed by codeJob - data is extracted from adal
+    else{
+        let allData = await get_latest_data(client, request);
+        if(allData){
+            for(const element of activityList){
+                let resourceData = allData['Data'][element];
+                updateReturnedObject(returnedObject, element, resourceData)
+            }
+        }   
+    }
 }
 
-
-//extract from the object that returns from get_all_data_for_key the last element
-//get_all_data_for_key- returns a list of a given key values per date
-function extractActivityData(getActivitiesData) {
-    let activitiesCount;
-    //Taking the last element that was inserted to get_all_data_for_key array (the most up-to-date element)
-    activitiesCount = getActivitiesData[getActivitiesData.length - 1];
-    let activitiesValues = (Object.values(activitiesCount))[0];
-    return activitiesValues;
+function updateReturnedObject(returnedObject, element, resourceValue){
+    if((element == 'NucleusActivities' && resourceValue >= nucleusActivitiesLimit) || resourceValue >= usageDatalimit){
+        returnedObject.status = "ERROR"
+        returnedObject.InternalError += `${element} count crossed the limit. `;
+    }
+    return returnedObject;    
 }
 
-
+//daily data insertion to UsageMonitorDaily table
 async function getRelationsDailyData(client:Client, request:Request){
     const service = new MyService(client);
     let relations = await service.papiClient.addons.data.relations.iter({where:'RelationName=UsageMonitor'}).toArray();

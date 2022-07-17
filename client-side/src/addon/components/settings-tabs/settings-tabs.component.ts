@@ -4,6 +4,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { PepHttpService } from '@pepperi-addons/ngx-lib';
 import { IPepButtonClickEvent } from '@pepperi-addons/ngx-lib/button';
 import { DIMXComponent } from '@pepperi-addons/ngx-composite-lib/dimx-export';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'addon-settings-tabs',
@@ -19,11 +20,17 @@ export class SettingsTabsComponent implements OnInit {
     weekNumber = 0;
     lastUpdatedDate: string;
     relationsData: {}[];
+    UserDefinedTables: Number;
+    NucleusTransactionLines: Number;
+    NucleusActivities: Number;
+
     
     constructor(
       private dialogService: PepDialogService,
       private translate: TranslateService,
-      private http: PepHttpService
+      private http: PepHttpService,
+      public activatedRoute: ActivatedRoute
+
     ) {
 
     }
@@ -55,6 +62,11 @@ export class SettingsTabsComponent implements OnInit {
                 this.lastUpdatedDate = new Date(latest_data_received.Key).toLocaleString();
 
                 this.relationsData = latest_data_received.RelationsData;
+
+                //for "update now" activate system health
+                this.UserDefinedTables = latest_data_received.Data.UserDefinedTables;
+                this.NucleusTransactionLines = latest_data_received.Data.NucleusTransactionLines;
+                this.NucleusActivities = latest_data_received.Data.NucleusActivities;
               }
           },
           (error) => this.openErrorDialog(error),
@@ -79,10 +91,11 @@ export class SettingsTabsComponent implements OnInit {
     return Object.keys(tab)[0];
   }
 
-  menuItemClick($event) {
+  async menuItemClick($event) {
     switch ($event.source.key) {
       case 'Update': {
         this.initData('collect_data'); // Generates updated data
+        await this.updateSystemHealth('MonitorErrors')  //on "update now", call to system health
         break
       }
       case 'Export': {
@@ -96,6 +109,27 @@ export class SettingsTabsComponent implements OnInit {
       }
     }
   }
+
+  async updateSystemHealth(apiFunc: string) {
+    let usageMonitorUUID = this.activatedRoute.snapshot.params.addon_uuid;
+    let url = `/addons/api/${usageMonitorUUID}/api/` + apiFunc;
+    let body = {
+      NucleusTransactionLines: this.NucleusTransactionLines,
+      NucleusActivities: this.NucleusActivities,
+      UserDefinedTables:  this.UserDefinedTables
+    }
+    try{
+      await this.http.postPapiApiCall(encodeURI(url), body).subscribe(
+        (element) => {},
+        (error) => this.openErrorDialog(error),
+        () => {}
+      );
+
+    }
+    catch(error){
+      console.log(error)
+    }
+}
 
   onDIMXProcessDone($event) {
     //
