@@ -4,6 +4,7 @@ import { Component, OnInit, ViewChild } from '@angular/core';
 import { PepHttpService } from '@pepperi-addons/ngx-lib';
 import { IPepButtonClickEvent } from '@pepperi-addons/ngx-lib/button';
 import { DIMXComponent } from '@pepperi-addons/ngx-composite-lib/dimx-export';
+import { ActivatedRoute } from '@angular/router';
 
 @Component({
   selector: 'addon-settings-tabs',
@@ -27,7 +28,9 @@ export class SettingsTabsComponent implements OnInit {
     constructor(
       private dialogService: PepDialogService,
       private translate: TranslateService,
-      private http: PepHttpService
+      private http: PepHttpService,
+      public activatedRoute: ActivatedRoute
+
     ) {
 
     }
@@ -108,7 +111,8 @@ export class SettingsTabsComponent implements OnInit {
   }
 
   async updateSystemHealth(apiFunc: string) {
-    let url = '/addons/api/00000000-0000-0000-0000-000000005A9E/api/' + apiFunc;
+    let usageMonitorUUID = this.activatedRoute.snapshot.params.addon_uuid;
+    let url = `/addons/api/${usageMonitorUUID}/api/` + apiFunc;
     let body = {
       NucleusTransactionLines: this.NucleusTransactionLines,
       NucleusActivities: this.NucleusActivities,
