@@ -263,26 +263,31 @@ export async function get_relations_data(client: Client) {
                 Size: number
             }[]        
     }[] = [];
+    try{
+        console.log("About to get all relations with RelationName=UsageMonitor and insert data to getRelationsResultObject");
+        await service.papiClient.addons.data.relations.iter({where:'RelationName=UsageMonitor'}).toArray()
+        .then(async x => {
+            let usageRelation = x;
+            for(let index=0; index < usageRelation.length; index++){
+                //If reporting period is weekly
+                if((usageRelation[index]['ReportingPeriod']== "Weekly" || (!usageRelation[index]['ReportingPeriod']) ) ){
+                    //If Aggregation Function is sum, sum all data from last week.
+                    if(usageRelation[index]['AggregationFunction']== "SUM"){
+                        await GetDataForSUMAggregation(client, usageRelation, index, getRelationsResultObject, relationsDataList);
+                    }
+                    
+                    //If Aggregation Function is last, take the latest data that was inserted to the table.
+                    if(usageRelation[index]['AggregationFunction']== "LAST" || (!usageRelation[index]['AggregationFunction']) ){
+                        await GetDataForLASTAggregation(client, usageRelation, index, getRelationsResultObject, relationsDataList);                    
+                    }
+                }
+            } 
+        })
+        console.log("Got all relations with RelationName=UsageMonitor");    
+    } catch (error) {
+        console.log("Got error in get_relations_data, error: " + error);
+    }
     
-    await service.papiClient.addons.data.relations.iter({where:'RelationName=UsageMonitor'}).toArray()
-    .then(async x => {
-        let usageRelation = x;
-        for(let index=0; index < usageRelation.length; index++){
-            //If reporting period is weekly
-            if((usageRelation[index]['ReportingPeriod']== "Weekly" || (!usageRelation[index]['ReportingPeriod']) ) ){
-                //If Aggregation Function is sum, sum all data from last week.
-                if(usageRelation[index]['AggregationFunction']== "SUM"){
-                    await GetDataForSUMAggregation(client, usageRelation, index, getRelationsResultObject, relationsDataList);
-                }
-                
-                //If Aggregation Function is last, take the latest data that was inserted to the table.
-                if(usageRelation[index]['AggregationFunction']== "LAST" || (!usageRelation[index]['AggregationFunction']) ){
-                    await GetDataForLASTAggregation(client, usageRelation, index, getRelationsResultObject, relationsDataList);                    
-                }
-            }
-        } 
-    })
-
     getRelationsResultObject.Relations = relationsDataList;
     return getRelationsResultObject;
 }
@@ -307,35 +312,42 @@ async function GetDataForSUMAggregation(client, usageRelation, index, getRelatio
     const dailyUsageTable: string = 'UsageMonitorDaily';
 
     let Params: string = `AddonUUID_RelationName='${id}' and ${dateCheck}`;
+    try{
+        console.log(`About to get data with parameters : ${Params}`);
+        const Result = await papiClient.addons.data.uuid(usageMonitorUUID).table(dailyUsageTable).iter({where: Params, order_by: "CreationDateTime DESC"}).toArray();
+        console.log(`Got all data with parameters : ${Params}`);
+        let retObj = (Result && Result[0]) ? Result[0] : undefined;
 
-    const Result = await papiClient.addons.data.uuid(usageMonitorUUID).table(dailyUsageTable).iter({where: Params, order_by: "CreationDateTime DESC"}).toArray();
-    let retObj = (Result[0]) ? Result[0] : undefined;
+        let todayDate: Date = new Date();
+        let todayDateString = (todayDate.getDate()).toString();
 
-    let todayDate: Date = new Date();
-    let todayDateString = (todayDate.getDate()).toString();
+        //extract the first element from Result in order to check if its date is from today or yesterday
+        let firstElementDate = (Result[0]) ? Result[0]['CreationDateTime'] : undefined;
+        //extract only the day from the date string
+        let firstElementDateString = (firstElementDate) ? (((firstElementDate.split("-"))[2]).slice(0,2)).toString() : undefined;
 
-    //extract the first element from Result in order to check if its date is from today or yesterday
-    let firstElementDate = (Result[0]) ? Result[0]['CreationDateTime'] : undefined;
-    //extract only the day from the date string
-    let firstElementDateString = (firstElementDate) ? (((firstElementDate.split("-"))[2]).slice(0,2)).toString() : undefined;
-
-    //checking if the first item in the array is from today or yesterday- if it is from today we take the second element in the array (from yesterday), else we take the first.
-    //if the last item is from today
-    if(retObj){
-        if(firstElementDateString && firstElementDateString == todayDateString){
-            if(Result[1]){
-                let start = 1;
-                buildRelation(Result, retObj, start, sum, getRelationsResultObject, relationsDataList);
+        //checking if the first item in the array is from today or yesterday- if it is from today we take the second element in the array (from yesterday), else we take the first.
+        //if the last item is from today
+        if(retObj){
+            if(firstElementDateString && firstElementDateString == todayDateString){
+                if(Result[1]){
+                    let start = 1;
+                    buildRelation(Result, retObj, start, sum, getRelationsResultObject, relationsDataList);
+                }
+            }
+            //if the last item is from yesterday
+            else{
+                if(Result[0]){
+                    let start = 0;
+                    buildRelation(Result, retObj, start, sum, getRelationsResultObject, relationsDataList);
+                }
             }
         }
-        //if the last item is from yesterday
-        else{
-            if(Result[0]){
-                let start = 0;
-                buildRelation(Result, retObj, start, sum, getRelationsResultObject, relationsDataList);
-            }
-        }
+    } catch(err){
+        console.log(`Failed retrieving data for GetDataForSUMAggregation, parameters : ${Params}, error : ${err}`)
     }
+
+    
 }
 
 function buildRelation(Result, retObj, start, sum, getRelationsResultObject, relationsDataList){
@@ -361,12 +373,15 @@ async function GetDataForLASTAggregation(client, usageRelation, index, getRelati
     const usageMonitorUUID: string = client.AddonUUID;
     const dailyUsageTable: string = 'UsageMonitorDaily';
     const Url: string = `${usageMonitorUUID}/${dailyUsageTable +'?'+ Params}`;
-
-    const Result = await papiClient.get(`/addons/data/${Url}`);
-
-    let lastData = (Result[0]) ? Result[0]['RelationData'] : undefined;
-
-    insert_Relation(lastData, getRelationsResultObject, relationsDataList);
+    try{
+        console.log(`About to get data at URL : ${Url}`);
+        const Result = await papiClient.get(`/addons/data/${Url}`);
+        console.log(`Got all data : ${Url}`);
+        let lastData = (Result && Result[0]) ? Result[0]['RelationData'] : undefined;
+        insert_Relation(lastData, getRelationsResultObject, relationsDataList);
+    } catch(err){
+        console.log(`Failed retrieving data : ${Url}, error : ${err}`)
+    }    
 }
 
 
