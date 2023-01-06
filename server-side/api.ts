@@ -8,6 +8,7 @@ import { PapiClient } from '@pepperi-addons/papi-sdk';
 import jwtDecode from "jwt-decode";
 
 //for nucleus Activities the limit is 2 million
+// TODO: this should be moved in the future to the core addon
 const nucleusActivitiesLimit = 2*(Math.pow(10,5));
 //for user Defined Tables and nucleus Transaction Lines the limit is 10 million
 const usageDatalimit = 10*(Math.pow(10,5));
