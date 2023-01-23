@@ -21,12 +21,12 @@ export function buildObjectsForDIMX(client: Client, request: Request){
 
 export async function get_relations_daily_data_and_send_errors(client: Client, request: Request){
     await getRelationsDailyData(client, request);
-    //await MonitorErrors(client, request);
+    await MonitorErrors(client, request);
 }
 
 //The function is called by health monitor relation
 //If activities/transactions/UTDs count crossed the defined limit, print an error
-export async function MonitorErrors(client: Client, request: Request){
+export async function MonitorErrors(client: Client, request: Request) {
     const service = new MyService(client);
     let returnedObject = {
         InternalError: "",
@@ -34,49 +34,53 @@ export async function MonitorErrors(client: Client, request: Request){
     }
     await checkResourceLimit(client, request, returnedObject)
 
-    if(returnedObject.InternalError != ""){
-        let headers = {
-            "X-Pepperi-OwnerID" : client.AddonUUID,
-            "X-Pepperi-SecretKey" : client.AddonSecretKey
-        }
-        let body = {
-            Name: "Usage Monitor Limit",
-            Description: "Check if usage data passed the limit",
-            Status: returnedObject.status,
-            Message: returnedObject.InternalError
-        }
-        const Url: string = `/system_Health/notifications`;
-        try{
-            console.log(`About to call system health with body ${JSON.stringify(body)}`);
-            const res = await service.papiClient.post(Url, body, headers);
-            console.log(`Succeed call system health notifications`);
-
-        }
-        catch(err){
-            console.log("Error while calling system health:" + err);
-        }
+    let headers = {
+        "X-Pepperi-OwnerID": client.AddonUUID,
+        "X-Pepperi-SecretKey": client.AddonSecretKey
     }
+
+    if (returnedObject.status == "SUCCESS") {
+        returnedObject.InternalError = "SUCCESS"
+    }
+
+    let body = {
+        Name: "Usage Monitor Limit",
+        Description: "Check if usage data passed the limit",
+        Status: returnedObject.status,
+        Message: returnedObject.InternalError
+    }
+    const Url: string = `/system_Health/notifications`;
+    try {
+        console.log(`About to call system health with body ${JSON.stringify(body)}`);
+        const res = await service.papiClient.post(Url, body, headers);
+        console.log(`Succeed call system health notifications`);
+
+    }
+    catch (err) {
+        console.log("Error while calling system health:" + err);
+    }
+
 }
 
-async function checkResourceLimit(client: Client, request: Request, returnedObject){
+async function checkResourceLimit(client: Client, request: Request, returnedObject) {
     let activityList = ['UserDefinedTables', 'NucleusTransactionLines', 'NucleusActivities']
     //called by UI "update now" - data is extracted by "collect_data" in the client-side
-    if(Object.keys(request.body).length != 0){
-        for(const element in request.body){
-            if(activityList.includes(element)){
+    if (request.body != undefined && request.body != null && Object.keys(request.body).length != 0) {
+        for (const element in request.body) {
+            if (activityList.includes(element)) {
                 updateReturnedObject(returnedObject, element, request.body[element]);
             }
         }
     }
     //function executed by codeJob - data is extracted from adal
-    else{
+    else {
         let allData = await get_latest_data(client, request);
-        if(allData){
-            for(const element of activityList){
+        if (allData) {
+            for (const element of activityList) {
                 let resourceData = allData['Data'][element];
                 updateReturnedObject(returnedObject, element, resourceData)
             }
-        }   
+        }
     }
 }
 
