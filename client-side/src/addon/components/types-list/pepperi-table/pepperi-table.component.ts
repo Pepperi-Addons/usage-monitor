@@ -18,7 +18,8 @@ import { PepListComponent } from '@pepperi-addons/ngx-lib/list';
       (listChange)="listChanged.emit($event)"
       (sortingChange)="sortingChanged.emit($event)"
       (fieldClick)="fieldClicked.emit($event)"
-      (selectedItemsChange)="selectedItemsChanged.emit($event)">
+      (selectedItemsChange)="selectedItemsChanged.emit($event)"
+      [viewType]="'table'">
   </pep-list>
 </div>`,
     styles: [`
