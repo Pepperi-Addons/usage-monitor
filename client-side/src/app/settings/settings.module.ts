@@ -4,8 +4,6 @@ import { TranslateLoader, TranslateModule, TranslateService, TranslateStore } fr
 import { PepNgxLibModule, PepAddonService } from '@pepperi-addons/ngx-lib';
 import { SettingsRoutingModule } from './settings.routes';
 import { SettingsComponent } from './settings.component';
-import { EditorFormModule } from './editor-form/editor-form.module';
-import { EditorListModule } from './editor-list/editor-list.module';
 import { config } from '../app.config';
 import { PepListModule } from '@pepperi-addons/ngx-lib/list';
 import { PepTopBarModule } from '@pepperi-addons/ngx-lib/top-bar';
