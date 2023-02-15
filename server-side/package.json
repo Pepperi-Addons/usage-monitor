@@ -31,8 +31,10 @@
     "dependencies": {
         "@pepperi-addons/debug-server": "^0.0.32",
         "@pepperi-addons/papi-sdk": "^1.27.6",
+        "@pepperi-addons/system-addon-utils": "^1.0.4",
         "encoding": "^0.1.13",
         "lodash": "^4.17.21",
-        "node-fetch": "^2.6.1"
+        "node-fetch": "^2.6.1",
+        "parallel-each": "^1.1.7"
     }
 }

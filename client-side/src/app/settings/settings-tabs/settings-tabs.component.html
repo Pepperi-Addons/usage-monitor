@@ -18,16 +18,17 @@
                 ></pep-menu>
             </div>
         </pep-top-bar>
-        <pep-dimx #dimx [DIMXAddonUUID]="'00000000-0000-0000-0000-000000005a9e'" [DIMXResource]="'UsageMonitor'"></pep-dimx>
+        <!-- <pep-dimx #dimx [DIMXAddonUUID]="'00000000-0000-0000-0000-000000005a9e'" [DIMXResource]="'UsageMonitor'"></pep-dimx> -->
 
     </ng-container>
+
+<!-- remove deletion -->
     <div pep-main-area class="tabs-container">
         <mat-tab-group  
             dynamicHeight #tabGroup
             [selectedIndex]="activeTabIndex"
             (selectedTabChange)="tabClick($event)"
-            animationDuration="100ms" class="fixed-header"
-        >
+            animationDuration="100ms" class="fixed-header">
             <mat-tab id="1" label="{{'DataTabHeader' | translate}}">
                 <addon-pepperi-list-exmaple [type]="'Data'" [ID]='0' [isActive]="activeTabIndex === 0" [data]="activeTabIndex === 0 ? currentData : null"></addon-pepperi-list-exmaple>
             </mat-tab>
