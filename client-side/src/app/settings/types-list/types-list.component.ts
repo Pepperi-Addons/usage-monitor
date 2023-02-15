@@ -1,4 +1,4 @@
-import { ListSearch, RemoteModuleOptions } from './../../../../../model';
+import { ListSearch, RemoteModuleOptions } from '../../../../../model';
 import { PepperiTableComponent } from './pepperi-table/pepperi-table.component';
 import { ChartDialogComponent } from './chart-dialog/chart-dialog';
 import { Component, ComponentRef, Input, OnInit, SimpleChanges, TemplateRef, ViewChild, ViewContainerRef } from '@angular/core';
@@ -70,7 +70,7 @@ export class TypesListComponent implements OnInit {
         private route: ActivatedRoute
 
     ) {
-        this.addonUUID = route.snapshot.params.addon_uuid;
+        this.addonUUID = route.snapshot.params.addonUUID;
         this.papi = new PapiClient({
             baseURL: this.session.getPapiBaseUrl(),
             token: this.session.getIdpToken()
@@ -309,5 +309,5 @@ export class TypesListComponent implements OnInit {
             },
             dialogConfig
             );
-    }
+    }    
 }

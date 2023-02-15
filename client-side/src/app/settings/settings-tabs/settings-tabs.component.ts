@@ -1,10 +1,10 @@
 import { TranslateService } from '@ngx-translate/core';
 import { PepDialogService, PepDialogData } from '@pepperi-addons/ngx-lib/dialog';
-import { Component, OnInit, ViewChild } from '@angular/core';
+import { Component, OnInit, ViewChild, ViewContainerRef } from '@angular/core';
 import { PepHttpService } from '@pepperi-addons/ngx-lib';
-import { IPepButtonClickEvent } from '@pepperi-addons/ngx-lib/button';
-import { DIMXComponent } from '@pepperi-addons/ngx-composite-lib/dimx-export';
 import { ActivatedRoute } from '@angular/router';
+import { DIMXHostObject, PepDIMXHelperService } from '@pepperi-addons/ngx-composite-lib'
+
 
 @Component({
   selector: 'addon-settings-tabs',
@@ -12,8 +12,6 @@ import { ActivatedRoute } from '@angular/router';
   styleUrls: ['./settings-tabs.component.scss']
 })
 export class SettingsTabsComponent implements OnInit {
-    @ViewChild('dimx') dimx:DIMXComponent | undefined;
-
     tabs: Array<any>;
     activeTabIndex = 0;
     currentData: Promise<any>;
@@ -29,8 +27,9 @@ export class SettingsTabsComponent implements OnInit {
       private dialogService: PepDialogService,
       private translate: TranslateService,
       private http: PepHttpService,
-      public activatedRoute: ActivatedRoute
-
+      public activatedRoute: ActivatedRoute,
+      private viewContainerRef: ViewContainerRef,
+      private dimxService: PepDIMXHelperService
     ) {
 
     }
@@ -38,6 +37,12 @@ export class SettingsTabsComponent implements OnInit {
     async ngOnInit() {
       this.activeTabIndex = 0;
       this.initData('get_latest_data');
+
+      const dimxHostObject: DIMXHostObject = {
+        DIMXAddonUUID: this.activatedRoute.snapshot.params.addonUUID,
+        DIMXResource: 'UsageMonitor',
+      }
+      this.dimxService.register(this.viewContainerRef, dimxHostObject, (dimxEvent) => {})
     }
 
     menuItems = [
@@ -99,19 +104,21 @@ export class SettingsTabsComponent implements OnInit {
         break
       }
       case 'Export': {
-        this.dimx?.DIMXExportRun({
+        this.dimxService.export({
           DIMXExportFormat: "csv",
           DIMXExportIncludeDeleted: false,
           DIMXExportFileName: "export",
           DIMXExportDelimiter: ","
         });
+
         break
       }
     }
   }
 
   async updateSystemHealth(apiFunc: string) {
-    let usageMonitorUUID = this.activatedRoute.snapshot.params.addon_uuid;
+    debugger
+    let usageMonitorUUID = this.activatedRoute.snapshot.params.addonUUID;
     let url = `/addons/api/${usageMonitorUUID}/api/` + apiFunc;
     let body = {
       NucleusTransactionLines: this.NucleusTransactionLines,

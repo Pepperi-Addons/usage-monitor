@@ -1,157 +1,100 @@
 {
-  "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
-  "version": 1,
-  "newProjectRoot": "projects",
-  "projects": {
-    "client-side": {
-      "projectType": "application",
-      "schematics": {
-        "@schematics/angular:component": {
-          "style": "scss"
-        }
-      },
-      "root": "",
-      "sourceRoot": "src",
-      "prefix": "addon",
-      "architect": {
-        "build": {
-          "builder": "@angular-builders/custom-webpack:browser",
-          "options": {
-            "outputPath": "../publish/",
-            "index": "src/index.html",
-            "main": "src/main.ts",
-            "polyfills": "src/polyfills.ts",
-            "tsConfig": "tsconfig.json",
-            "sourceMap": false,
-            "aot": true,
-            "stylePreprocessorOptions": {
-                "includePaths": [
-                    "node_modules/@pepperi-addons",
-                    "node_modules"
-                ]
-            },
-            "assets": [
-              "src/assets",
-              {
-                "glob": "**/*",
-                "input": "node_modules/@pepperi-addons/ngx-lib/src/assets",
-                "output": "/"
-              },
-              {
-                "glob": "**/*",
-                "input": "./src/assets/i18n/",
-                "output": "/"
-              }
-
-            ],
-            "styles": [
-            ],
-            "scripts": [
-                "node_modules/systemjs/dist/extras/amd.min.js",
-                "node_modules/systemjs/dist/extras/named-exports.min.js",
-                "node_modules/systemjs/dist/extras/module-types.min.js",
-                "node_modules/systemjs/dist/extras/dynamic-import-maps.min.js",
-                "node_modules/systemjs/dist/extras/global.min.js",
-                "node_modules/systemjs/dist/extras/named-register.min.js",
-                "node_modules/systemjs/dist/extras/use-default.min.js"
-            ],
-            "customWebpackConfig": {
-              "path": "extra-webpack.config.js",
-              "libraryName": "client-side",
-              "libraryTarget": "umd"
-            }
-          },
-          "configurations": {
-            "production": {
-              "fileReplacements": [
-                {
-                  "replace": "src/environments/environment.ts",
-                  "with": "src/environments/environment.prod.ts"
+    "$schema": "./node_modules/@angular/cli/lib/config/schema.json",
+    "version": 1,
+    "projects": {
+        "block": {
+            "projectType": "application",
+            "schematics": {
+                "@schematics/angular:component": {
+                    "style": "scss"
                 }
-              ],
-              "optimization": true,
-              "outputHashing": "none",
-              "namedChunks": false,
-              "extractLicenses": true,
-              "vendorChunk": false,
-              "buildOptimizer": true,
-              "budgets": [
-                {
-                  "type": "initial",
-                  "maximumWarning": "2mb",
-                  "maximumError": "5mb"
+            },
+            "root": "./",
+            "sourceRoot": "src",
+            "prefix": "block",
+            "architect": {
+                "build": {
+                    "builder": "ngx-build-plus:browser",
+                    "options": {
+                        "outputPath": "../publish",
+                        "index": "src/index.html",
+                        "main": "src/main.ts",
+                        "polyfills": "src/polyfills.ts",
+                        "tsConfig": "tsconfig.json",
+                        "stylePreprocessorOptions": {
+                            "includePaths": [
+                                "node_modules/@pepperi-addons",
+                                "node_modules"
+                            ]
+                        },
+                        "assets": [
+                            "src/favicon.ico",
+                            "src/assets",
+                            {
+                                "glob": "**/*",
+                                "input": "node_modules/@pepperi-addons/ngx-lib/src/assets",
+                                "output": "./assets/ngx-lib"
+                            },
+                            {
+                                "glob": "**/*",
+                                "input": "node_modules/@pepperi-addons/ngx-composite-lib/src/assets",
+                                "output": "./assets/ngx-composite-lib"
+                            }
+                        ],
+                        "commonChunk": false,
+                        "extraWebpackConfig": "webpack.config.js"
+                    },
+                    "configurations": {
+                        "development": {
+                            "buildOptimizer": false,
+                            "optimization": false,
+                            "vendorChunk": true,
+                            "extractLicenses": false,
+                            "sourceMap": true,
+                            "namedChunks": true
+                        },
+                        "production": {
+                            "optimization": true,
+                            "sourceMap": false,
+                            "namedChunks": false,
+                            "extractLicenses": true,
+                            "vendorChunk": false,
+                            "buildOptimizer": true,
+                            "outputHashing": "none",
+                            "fileReplacements": [{
+                                "replace": "src/environments/environment.ts",
+                                "with": "src/environments/environment.prod.ts"
+                            }],
+                            "extraWebpackConfig": "webpack.prod.config.js"
+                        }
+                    },
+                    "defaultConfiguration": "production"
                 },
-                {
-                  "type": "anyComponentStyle",
-                  "maximumWarning": "6kb",
-                  "maximumError": "10kb"
+                "serve": {
+                    "builder": "ngx-build-plus:dev-server",
+                    "options": {
+						"port": 4400,
+						"publicHost": "http://localhost:4400",
+						"extraWebpackConfig": "webpack.config.js"
+					},
+                    "configurations": {
+                        "production": {
+                            "browserTarget": "block:build:production"
+                        },
+                        "development": {
+                            "browserTarget": "block:build:development",
+                            "extraWebpackConfig": "webpack.prod.config.js"
+                        }
+                    },
+                    "defaultConfiguration": "development"
                 }
-              ]
-            },
-            "development": {
-              "buildOptimizer": false,
-              "optimization": false,
-              "vendorChunk": true,
-              "extractLicenses": false,
-              "sourceMap": true,
-              "namedChunks": true,
-              "outputHashing": "none"
             }
-          },
-          "defaultConfiguration": "production"
-        },
-        "serve": {
-          "builder": "@angular-builders/custom-webpack:dev-server",
-          "options": {
-            "browserTarget": "client-side:build"
-
-          },
-          "configurations": {
-            "production": {
-              "browserTarget": "client-side:build:production"
-            },
-            "development": {
-                "browserTarget": "client-side:build:development"
-            }
-
-            },
-            "defaultConfiguration": "development"
-        },
-        "extract-i18n": {
-          "builder": "@angular-devkit/build-angular:extract-i18n",
-          "options": {
-            "browserTarget": "client-side:build"
-          }
-        },
-
-        "lint": {
-          "builder": "@angular-devkit/build-angular:tslint",
-          "options": {
-            "tsConfig": [
-              "tsconfig.json"
-            ],
-            "exclude": [
-              "**/node_modules/**"
-            ]
-          }
-        },
-        "e2e": {
-          "builder": "@angular-devkit/build-angular:protractor",
-          "options": {
-            "protractorConfig": "e2e/protractor.conf.js",
-            "devServerTarget": "client-side:serve"
-          },
-          "configurations": {
-            "production": {
-              "devServerTarget": "client-side:serve:production"
-            }
-          }
         }
-      }
+    },
+    "cli": {
+        "cache": {
+            "enabled": false
+        },
+        "analytics": false
     }
-  },
-  "defaultProject": "client-side",
-  "cli": {
-    "analytics": false
-  }
 }
