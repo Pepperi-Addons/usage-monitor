@@ -6,7 +6,7 @@
         </div>
         <div header-end-content class="pep-spacing-element-negative">
         </div>
-        <!-- <pep-list-actions #listActions *ngIf="showListActions" (menuClick)="onLeftMenuClicked();" (actionClick)="onMenuItemClicked($event)" sizeType="sm" [actions]="leftMenuItems | async"></pep-list-actions> -->
+        <pep-list-actions #listActions *ngIf="showListActions" (menuClick)="onLeftMenuClicked();" (actionClick)="onMenuItemClicked($event)" sizeType="sm" [actions]="leftMenuItems | async"></pep-list-actions>
     </pep-top-bar>
 
     <pep-table [dataSource]="latestDataArray" [displayedColumns]="displayedColumns"
