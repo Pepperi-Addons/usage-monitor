@@ -1051,8 +1051,8 @@ export async function collect_data(client: Client, request: Request) {
         ActivityFields: activityFieldsCount,
         TransactionLineFields: transactionLineFieldsCount,
         ItemFields: itemFieldsCount,
-        AccountFields: accountFieldsCount,
-        SecurityGroups: null
+        AccountFields: accountFieldsCount
+        // SecurityGroups: null
     };
 
     result.Usage = {
@@ -1071,11 +1071,11 @@ export async function collect_data(client: Client, request: Request) {
         NucleusTransactions: transactionsCount,
         NucleusActivities: activitiesCount,
         NucleusTransactionLines: transactionLinesCount,
-        DatabaseAllActivities: null,
+        // DatabaseAllActivities: null,
         Images: imagesCount,
         UserDefinedTables: userDefinedTablesCount,
-        UserDefinedTablesLines: userDefinedTablesLinesCount,
-        Attachments: null
+        UserDefinedTablesLines: userDefinedTablesLinesCount
+        // Attachments: null
 
     }
     result.Errors = errors;
