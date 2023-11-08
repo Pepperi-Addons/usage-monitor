@@ -143,7 +143,7 @@ export async function uninstall(client: Client, request: Request): Promise<any> 
     catch (err) {
         if (err instanceof Error)
         return {
-            success: false,
+            success: true,
             errorMessage: ('message' in err) ? err.message : 'Failed to uninstall pepperi-usage addon',
             resultObject: {}
         };
